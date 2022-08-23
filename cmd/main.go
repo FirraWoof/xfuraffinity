@@ -13,12 +13,12 @@ import (
 func main() {
 	w := httptest.NewRecorder()
 
-	req, err := http.NewRequest("GET", "https://fxfuraffinity-nznulg2x4a-ue.a.run.app/view/47817919/", strings.NewReader(""))
+	req, err := http.NewRequest("GET", "https://example.com/view/41508184/", strings.NewReader(""))
 	if err != nil {
 		panic("could not create request")
 	}
 
-	fxfuraffinity.GenerateEmbed(w, req)
+	fxfuraffinity.HandleRequest(w, req)
 	if b, err := ioutil.ReadAll(w.Body); err == nil {
 		fmt.Println(string(b))
 	}
