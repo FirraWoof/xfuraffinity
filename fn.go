@@ -8,7 +8,6 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -39,6 +38,10 @@ func GenerateEmbed(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: Redirect only users (use the useragent to detect)
+// - TG UA     : `TelegramBot (like TwitterBot)`
+// - Discord UA: `Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)`
+// TODO: TG not rendering? doc.Find("html head").AppendHtml(fmt.Sprintf("<meta http-equiv=\"refresh\" content=\"0; url=%s\" />", targetPost))
 func generateFaEmbed(w http.ResponseWriter, path string) error {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
@@ -70,7 +73,7 @@ func generateFaEmbed(w http.ResponseWriter, path string) error {
 
 	targetPost := baseEndpoint + path
 
-	if !strings.HasPrefix(path, "/view/") {
+	if !SubmissionPathIsValid(path) {
 		return errors.New("attempted to load embed that was not a submission")
 	}
 
@@ -94,9 +97,6 @@ func generateFaEmbed(w http.ResponseWriter, path string) error {
 		return errors.New("did not find exactly one submission image")
 	}
 
-	doc.Find("meta[property*='og:image']").Remove()
-	doc.Find("meta[name*='twitter:image']").Remove()
-
 	submissionImgNode := submissionSel.Nodes[0]
 	var submissionImgLink string
 	for _, attr := range submissionImgNode.Attr {
@@ -105,10 +105,19 @@ func generateFaEmbed(w http.ResponseWriter, path string) error {
 		}
 	}
 
-	doc.Find("html head").AppendHtml(fmt.Sprintf("<meta property=\"og:image\" content=\"%s\">", submissionImgLink))
-	doc.Find("html head").AppendHtml(fmt.Sprintf("<meta property=\"og:image:secure_url\" content=\"%s\">", submissionImgLink))
-	doc.Find("html head").AppendHtml("<meta property=\"og:image:type\" content=\"image/jpeg\">")
-	doc.Find("html head").AppendHtml(fmt.Sprintf("<meta name=\"twitter:image\" content=\"%s\">", submissionImgLink))
+	doc.Find("meta[property*='og:image']").Remove()
+	doc.Find("meta[name*='twitter:image']").Remove()
+	doc.Find("meta[name*='twitter:label2']").Remove()
+	doc.Find("meta[name*='twitter:data2']").Remove()
+
+	doc.Find("html head").AppendHtml(fmt.Sprintf("<meta property=\"og:image\" content=\"%s\" />", submissionImgLink))
+	doc.Find("html head").AppendHtml(fmt.Sprintf("<meta property=\"og:image:secure_url\" content=\"%s\" />", submissionImgLink))
+	doc.Find("html head").AppendHtml("<meta property=\"og:image:type\" content=\"image/jpeg\" />")
+	doc.Find("html head").AppendHtml(fmt.Sprintf("<meta name=\"twitter:image\" content=\"%s\" />", submissionImgLink))
+
+	doc.Find("body").Remove()
+	doc.Find("script").Remove()
+	doc.Find("link").Remove()
 
 	goquery.Render(w, doc.Selection)
 

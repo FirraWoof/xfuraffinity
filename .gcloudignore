@@ -19,3 +19,4 @@ cmd/
 .env
 README.md
 .vacode/
+*_test.go
