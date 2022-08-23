@@ -27,17 +27,25 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var response string
 
-	if !SubmissionPathIsValid(r.URL.Path) {
-		log.Printf("user provided an invalid path: %s", r.URL.Path)
-		w.Write([]byte(badPathEmbed))
-		return
-	}
-
 	if UserAgentIsBot(r.UserAgent()) {
 		log.Print("user agent appears to be a bot: generating embed")
+
+		if !SubmissionPathIsValid(r.URL.Path) {
+			log.Printf("user provided an invalid path: %s", r.URL.Path)
+			w.Write([]byte(badPathEmbed))
+			return
+		}
+
 		response, err = handleBotRequest(r)
 	} else {
 		log.Print("user agent appears to be a human: redirecting")
+
+		if !SubmissionPathIsValid(r.URL.Path) {
+			log.Printf("user provided an invalid path: %s", r.URL.Path)
+			w.Write([]byte(generateRedirectPage("https://furaffinity.net")))
+			return
+		}
+
 		response, err = handleHumanRequest(r)
 	}
 
@@ -50,14 +58,13 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleHumanRequest(r *http.Request) (string, error) {
-	postUrl, _ := url.Parse("https://furaffinity.net" + r.URL.Path) // path was validated
-	return generateRedirectPage(postUrl), nil
+	return generateRedirectPage("https://furaffinity.net" + r.URL.Path), nil // path was validated
 }
 
 func handleBotRequest(r *http.Request) (string, error) {
 	path := r.URL.Path
-	postUrl, _ := url.Parse("https://furaffinity.net" + path) // path was validated
-	resp, err := httpClient.Get(postUrl.String())
+	postUrl := "https://furaffinity.net" + path // path was validated
+	resp, err := httpClient.Get(postUrl)
 	if err != nil {
 		return "", fmt.Errorf("fetch submission %s: %w", path, err)
 	}

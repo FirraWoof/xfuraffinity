@@ -2,10 +2,9 @@ package fxfuraffinity
 
 import (
 	"fmt"
-	"net/url"
 )
 
-func generateEmbed(title string, desc string, postUrl *url.URL, imageUrl string) string {
+func generateEmbed(title string, desc string, postUrl string, imageUrl string) string {
 	return fmt.Sprintf(`
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
@@ -21,7 +20,6 @@ func generateEmbed(title string, desc string, postUrl *url.URL, imageUrl string)
     <meta property="og:image:type" content="image/jpeg" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:domain" content="%[5]s" />
     <meta name="twitter:title" content="%[1]s" />
     <meta name="twitter:description" content="%[2]s" />
     <meta name="twitter:url" content=%[4]s/>
@@ -29,10 +27,10 @@ func generateEmbed(title string, desc string, postUrl *url.URL, imageUrl string)
 
 	</head>
 	</html>
-	`, title, desc, imageUrl, postUrl, postUrl.Hostname())
+	`, title, desc, imageUrl, postUrl)
 }
 
-func generateRedirectPage(target *url.URL) string {
+func generateRedirectPage(target string) string {
 	return fmt.Sprintf(`
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
