@@ -34,10 +34,10 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if UserAgentIsBot(r.UserAgent()) {
-		log.Print("user agent appears to a bot: generating embed")
+		log.Print("user agent appears to be a bot: generating embed")
 		response, err = handleBotRequest(r)
 	} else {
-		log.Print("user agent appears to a human: redirecting")
+		log.Print("user agent appears to be a human: redirecting")
 		response, err = handleHumanRequest(r)
 	}
 
