@@ -1,4 +1,4 @@
-module github.com/firrawoof/fxfuraffinity
+module github.com/firrawoof/xfuraffinity
 
 go 1.16
 

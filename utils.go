@@ -1,4 +1,4 @@
-package fxfuraffinity
+package xfuraffinity
 
 import (
 	"encoding/json"
