@@ -94,7 +94,7 @@ func handleBotRequest(r *http.Request) (string, error) {
 		return "", errors.New("did not find exactly one submission description")
 	}
 
-	submissionImgLinkWithoutProto, err := GetNodeAttr(submissionSel.Nodes[0], "data-fullview-src")
+	submissionImgLinkWithoutProto, err := GetNodeAttr(submissionSel.Nodes[0], "src")
 	if err != nil {
 		return "", fmt.Errorf("failed to get submission image link for %s: %v", path, err)
 	}
