@@ -1,7 +1,6 @@
 package xfuraffinity
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,26 +26,18 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var response string
 
+	path, err := ValidateSubmissionPath(r.URL.Path)
+	if err != nil {
+		log.Printf("user provided an invalid path: %v", err)
+		w.Write([]byte(badPathEmbed))
+	}
+
 	if UserAgentIsBot(r.UserAgent()) {
 		log.Print("user agent appears to be a bot: generating embed")
-
-		if !SubmissionPathIsValid(r.URL.Path) {
-			log.Printf("user provided an invalid path: %s", r.URL.Path)
-			w.Write([]byte(badPathEmbed))
-			return
-		}
-
-		response, err = handleBotRequest(r)
+		response, err = handleBotRequest(path)
 	} else {
 		log.Print("user agent appears to be a human: redirecting")
-
-		if !SubmissionPathIsValid(r.URL.Path) {
-			log.Printf("user provided an invalid path: %s", r.URL.Path)
-			w.Write([]byte(generateRedirectPage("https://furaffinity.net")))
-			return
-		}
-
-		response, err = handleHumanRequest(r)
+		response, err = handleHumanRequest(path)
 	}
 
 	if err != nil {
@@ -57,13 +48,12 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleHumanRequest(r *http.Request) (string, error) {
-	return generateRedirectPage("https://furaffinity.net" + r.URL.Path), nil // path was validated
+func handleHumanRequest(path SubmissionPath) (string, error) {
+	return generateRedirectPage("https://furaffinity.net" + path.FullPath), nil
 }
 
-func handleBotRequest(r *http.Request) (string, error) {
-	path := r.URL.Path
-	postUrl := "https://furaffinity.net" + path // path was validated
+func handleBotRequest(path SubmissionPath) (string, error) {
+	postUrl := "https://furaffinity.net" + path.FullPath
 	resp, err := httpClient.Get(postUrl)
 	if err != nil {
 		return "", fmt.Errorf("fetch submission %s: %w", path, err)
@@ -79,36 +69,10 @@ func handleBotRequest(r *http.Request) (string, error) {
 		return "", fmt.Errorf("failed to parse html from %s: %v", path, err)
 	}
 
-	submissionSel := doc.Find("#submissionImg")
-	if submissionSel.Length() != 1 {
-		return "", errors.New("did not find exactly one submission image")
-	}
-
-	titleSel := doc.Find("meta[property*='og:title']")
-	if titleSel.Length() != 1 {
-		return "", errors.New("did not find exactly one submission title")
-	}
-
-	descSel := doc.Find("meta[property*='og:description']")
-	if descSel.Length() != 1 {
-		return "", errors.New("did not find exactly one submission description")
-	}
-
-	submissionImgLinkWithoutProto, err := GetNodeAttr(submissionSel.Nodes[0], "src")
+	submissionData, err := ExtractSubmissionInfo(path, doc)
 	if err != nil {
-		return "", fmt.Errorf("failed to get submission image link for %s: %v", path, err)
-	}
-	submissionImgLink := "https:" + submissionImgLinkWithoutProto
-
-	title, err := GetNodeAttr(titleSel.Nodes[0], "content")
-	if err != nil {
-		return "", fmt.Errorf("failed to get submission title for %s: %v", path, err)
+		return "", fmt.Errorf("failed to extract submission info: %v", err)
 	}
 
-	desc, err := GetNodeAttr(descSel.Nodes[0], "content")
-	if err != nil {
-		return "", fmt.Errorf("failed to get submission title for %s: %v", path, err)
-	}
-
-	return generateEmbed(title, desc, postUrl, submissionImgLink), nil
+	return generateEmbed(submissionData.Title, submissionData.Description, postUrl, submissionData.ImgUrl), nil
 }

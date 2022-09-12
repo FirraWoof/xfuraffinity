@@ -12,10 +12,23 @@ import (
 	"golang.org/x/net/html"
 )
 
-var submissionPattern = regexp.MustCompile(`^/view/\d+/?$`) // used as a constant
+var submissionPattern = regexp.MustCompile(`^(/view/(\d+)/?)`) // used as a constant
 
-func SubmissionPathIsValid(path string) bool {
-	return submissionPattern.Match([]byte(path))
+type SubmissionPath struct {
+	FullPath     string
+	SubmissionId string
+}
+
+func ValidateSubmissionPath(path string) (SubmissionPath, error) {
+	s := submissionPattern.FindStringSubmatch(path)
+	if len(s) == 3 {
+		return SubmissionPath{
+			FullPath:     s[1],
+			SubmissionId: s[2],
+		}, nil
+	}
+
+	return SubmissionPath{}, fmt.Errorf("submission path `%s` is invalid", path)
 }
 
 func LoadCookiesFromJson(url *url.URL, jar http.CookieJar, cookieJson string) error {
