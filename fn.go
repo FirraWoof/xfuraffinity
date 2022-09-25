@@ -7,6 +7,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -26,10 +27,32 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var response string
 
+	if r.URL.Path == "" || r.URL.Path == "/" {
+		response = handleRootRequest()
+	}
+	if strings.HasPrefix(r.URL.Path, "/view") {
+		response, err = handleSubmissionRequest(r)
+	}
+
+	if err != nil {
+		log.Print(err)
+		w.Write([]byte(serverErrorEmbed))
+	} else {
+		w.Write([]byte(response))
+	}
+}
+
+func handleRootRequest() string {
+	return generateRedirectPage("https://firrawoof.github.io/xfuraffinity/")
+}
+
+func handleSubmissionRequest(r *http.Request) (string, error) {
+	var response string
+
 	path, err := ValidateSubmissionPath(r.URL.Path)
 	if err != nil {
 		log.Printf("user provided an invalid path: %v", err)
-		w.Write([]byte(badPathEmbed))
+		return badPathEmbed, nil
 	}
 
 	if UserAgentIsBot(r.UserAgent()) {
@@ -41,11 +64,10 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Print(err)
-		w.Write([]byte(serverErrorEmbed))
-	} else {
-		w.Write([]byte(response))
+		return "", err
 	}
+
+	return response, nil
 }
 
 func handleHumanRequest(path SubmissionPath) (string, error) {
