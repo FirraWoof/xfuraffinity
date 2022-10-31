@@ -2,6 +2,7 @@ package xfuraffinity
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
@@ -14,12 +15,17 @@ import (
 
 var httpClient = http.DefaultClient
 
+const fiveMB = 1024 * 1024 * 5
+
 func init() {
 	jar, _ := cookiejar.New(nil)
 	faUrl, _ := url.Parse("https://www.furaffinity.net")
 	faSession := os.Getenv("FURAFFINITY_SESSION")
 
-	LoadCookiesFromJson(faUrl, jar, faSession)
+	err := LoadCookiesFromJson(faUrl, jar, faSession)
+	if err != nil {
+		panic(err)
+	}
 	httpClient.Jar = jar
 }
 
@@ -34,11 +40,16 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 		response, err = handleSubmissionRequest(r)
 	}
 
+	var writeError error
 	if err != nil {
 		log.Print(err)
-		w.Write([]byte(serverErrorEmbed))
+		_, writeError = w.Write([]byte(serverErrorEmbed))
 	} else {
-		w.Write([]byte(response))
+		_, writeError = w.Write([]byte(response))
+	}
+
+	if writeError != nil {
+		log.Printf("Could not write the response: %v", writeError)
 	}
 }
 
@@ -74,13 +85,18 @@ func handleHumanRequest(path SubmissionPath) (string, error) {
 	return generateRedirectPage("https://furaffinity.net" + path.FullPath), nil
 }
 
-func handleBotRequest(path SubmissionPath) (string, error) {
+func handleBotRequest(path SubmissionPath) (embed string, err error) {
 	postUrl := "https://furaffinity.net" + path.FullPath
 	resp, err := httpClient.Get(postUrl)
 	if err != nil {
 		return "", fmt.Errorf("fetch submission %s: %w", path, err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+	}(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("fetch submission %s: %w", path, err)
+	}
 
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("fetch submission %s: status %s", path, resp.Status)
@@ -96,5 +112,12 @@ func handleBotRequest(path SubmissionPath) (string, error) {
 		return "", fmt.Errorf("failed to extract submission info: %v", err)
 	}
 
-	return generateEmbed(submissionData.Title, submissionData.Description, postUrl, submissionData.ImgUrl), nil
+	embedImageUrl := submissionData.ImgUrl
+
+	resp, err = httpClient.Head(submissionData.ImgUrl)
+	if resp.ContentLength >= fiveMB {
+		embedImageUrl = submissionData.ThumbUrl
+	}
+
+	return generateEmbed(submissionData.Title, submissionData.Description, postUrl, embedImageUrl), nil
 }

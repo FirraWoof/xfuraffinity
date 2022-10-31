@@ -3,7 +3,7 @@ package xfuraffinity_test
 import (
 	"testing"
 
-	xfuraffinity "github.com/firrawoof/xfuraffinity"
+	"github.com/firrawoof/xfuraffinity"
 )
 
 func Test_GivenAValidPath_WhenValidatingSubmissionPath_ThenThePathIsRetured(t *testing.T) {
