@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/firrawoof/xfuraffinity/requesting_entities"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -48,10 +49,23 @@ func LoadCookiesFromJson(url *url.URL, jar http.CookieJar, cookieJson string) er
 	return nil
 }
 
-// UserAgentIsBot determines whether or not the request user-agent belongs to a human.
+// DetermineRequestingEntity determines whether the request user-agent belongs to a human.
 // Bot user-agents must not start with `Mozilla/`, except for the Discord bot, which uses a browser-like user-agent.
-func UserAgentIsBot(userAgent string) bool {
-	return !strings.HasPrefix(userAgent, "Mozilla/") || strings.Contains(userAgent, "Discordbot")
+// Use this for user agents https://developers.whatismybrowser.com/useragents/explore/
+func DetermineRequestingEntity(userAgent string) requesting_entities.Entity {
+	if strings.Contains(userAgent, "TelegramBot") {
+		return requesting_entities.Telegram
+	}
+
+	if strings.Contains(userAgent, "Discordbot") {
+		return requesting_entities.Discord
+	}
+
+	if strings.HasPrefix(userAgent, "Mozilla/") {
+		return requesting_entities.Human
+	}
+
+	return requesting_entities.Other
 }
 
 func GetNodeAttr(node *html.Node, attr string) (string, error) {

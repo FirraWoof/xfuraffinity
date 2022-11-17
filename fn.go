@@ -2,6 +2,7 @@ package xfuraffinity
 
 import (
 	"fmt"
+	"github.com/firrawoof/xfuraffinity/requesting_entities"
 	"io"
 	"log"
 	"net/http"
@@ -66,9 +67,10 @@ func handleSubmissionRequest(r *http.Request) (string, error) {
 		return badPathEmbed, nil
 	}
 
-	if UserAgentIsBot(r.UserAgent()) {
+	requestingEntity := DetermineRequestingEntity(r.UserAgent())
+	if requestingEntity != requesting_entities.Human {
 		log.Print("user agent appears to be a bot: generating embed")
-		response, err = handleBotRequest(path)
+		response, err = handleBotRequest(path, requestingEntity)
 	} else {
 		log.Print("user agent appears to be a human: redirecting")
 		response, err = handleHumanRequest(path)
@@ -85,7 +87,7 @@ func handleHumanRequest(path SubmissionPath) (string, error) {
 	return generateRedirectPage("https://furaffinity.net" + path.FullPath), nil
 }
 
-func handleBotRequest(path SubmissionPath) (embed string, err error) {
+func handleBotRequest(path SubmissionPath, entity requesting_entities.Entity) (embed string, err error) {
 	postUrl := "https://furaffinity.net" + path.FullPath
 	resp, err := httpClient.Get(postUrl)
 	if err != nil {
@@ -115,7 +117,8 @@ func handleBotRequest(path SubmissionPath) (embed string, err error) {
 	embedImageUrl := submissionData.ImgUrl
 
 	resp, err = httpClient.Head(submissionData.ImgUrl)
-	if resp.ContentLength >= fiveMB {
+	// AFAIK only TG refuses to render embeds with media over a certain size
+	if resp.ContentLength >= fiveMB && entity == requesting_entities.Telegram {
 		embedImageUrl = submissionData.ThumbUrl
 	}
 
