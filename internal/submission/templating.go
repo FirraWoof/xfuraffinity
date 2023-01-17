@@ -1,10 +1,21 @@
-package xfuraffinity
+package submission
 
 import (
 	"fmt"
 )
 
-func generateEmbed(title string, desc string, postUrl string, imageUrl string) string {
+func (s *Submission) GenerateEmbed() string {
+	videoMeta := ""
+	if s.ImgType == "gif" {
+		// TG considers GIFs to be videos, but using `content="video/gif"` doesn't work, while mp4 does somehow
+		videoMeta = fmt.Sprintf(`
+		<meta property="og:video" content="%[1]s">
+		<meta property="og:video:url" content="%[1]s">
+		<meta property="og:video:secure_url" content="%[1]s">
+		<meta property="og:video:type" content="video/mp4">
+		`, s.ImgUrl)
+	}
+
 	return fmt.Sprintf(`
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
@@ -13,24 +24,28 @@ func generateEmbed(title string, desc string, postUrl string, imageUrl string) s
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="%[1]s" />
+    <meta name="twitter:title" content="%[1]s" />
+
     <meta property="og:description" content="%[2]s" />
-    <meta property="og:url" content="%[4]s" />
+    <meta name="twitter:description" content="%[2]s" />
+
     <meta property="og:image" content="%[3]s" />
     <meta property="og:image:secure_url" content="%[3]s" />
-    <meta property="og:image:type" content="image/jpeg" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="%[1]s" />
-    <meta name="twitter:description" content="%[2]s" />
-    <meta name="twitter:url" content=%[4]s/>
     <meta name="twitter:image" content="%[3]s" />
+    <meta property="og:image:type" content="image/%[4]s" />
+
+	%[5]s
+
+    <meta property="og:url" content="%[6]s" />
+    <meta name="twitter:url" content=%[6]s/>
+    <meta name="twitter:card" content="summary_large_image" />
 
 	</head>
 	</html>
-	`, title, desc, imageUrl, postUrl)
+	`, s.Title, s.Description, s.ImgUrl, s.ImgType, videoMeta, s.Path.SubmissionUrl)
 }
 
-func generateRedirectPage(target string) string {
+func GenerateRedirectPage(target string) string {
 	return fmt.Sprintf(`
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
@@ -41,7 +56,7 @@ func generateRedirectPage(target string) string {
 	`, target)
 }
 
-const serverErrorEmbed = `
+const ServerErrorEmbed = `
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
 	<head>
@@ -56,7 +71,7 @@ const serverErrorEmbed = `
 	</html>
 `
 
-const badPathEmbed = `
+const BadPathEmbed = `
 	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
 	<head>

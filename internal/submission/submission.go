@@ -1,16 +1,20 @@
-package xfuraffinity
+package submission
 
 import (
 	"errors"
 	"fmt"
+	"github.com/firrawoof/xfuraffinity/internal"
+	"github.com/firrawoof/xfuraffinity/internal/submission_path"
 	"strconv"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
 type Submission struct {
-	Path         SubmissionPath
+	Path         submission_path.Path
 	ImgUrl       string
+	ImgType      string
 	ThumbUrl     string
 	Title        string
 	Description  string
@@ -19,7 +23,7 @@ type Submission struct {
 	FaveCount    int64
 }
 
-func ExtractSubmissionInfo(path SubmissionPath, doc *goquery.Document) (*Submission, error) {
+func ExtractSubmissionInfo(path submission_path.Path, doc *goquery.Document) (*Submission, error) {
 	submissionSel := doc.Find("#submissionImg")
 	if submissionSel.Length() != 1 {
 		return nil, errors.New("did not find exactly one submission image")
@@ -35,19 +39,25 @@ func ExtractSubmissionInfo(path SubmissionPath, doc *goquery.Document) (*Submiss
 		return nil, errors.New("did not find exactly one submission description")
 	}
 
-	submissionImgLinkWithoutProto, err := GetNodeAttr(submissionSel.Nodes[0], "src")
+	submissionImgLinkWithoutProto, err := internal.GetNodeAttr(submissionSel.Nodes[0], "src")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get submission image link for %s: %v", path, err)
 	}
 	submissionImgLink := "https:" + submissionImgLinkWithoutProto
 
-	submissionThumbLinkWithoutProto, err := GetNodeAttr(submissionSel.Nodes[0], "data-preview-src")
+	dotParts := strings.Split(submissionImgLink, ".")
+	if len(dotParts) == 0 {
+		return nil, fmt.Errorf("failed to determine media file type for %s: %v", path, err)
+	}
+	mediaType := dotParts[len(dotParts)-1]
+
+	submissionThumbLinkWithoutProto, err := internal.GetNodeAttr(submissionSel.Nodes[0], "data-preview-src")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get submission image thumbnail for %s: %v", path, err)
 	}
 	submissionThumbLink := "https:" + submissionThumbLinkWithoutProto
 
-	title, err := GetNodeAttr(titleSel.Nodes[0], "content")
+	title, err := internal.GetNodeAttr(titleSel.Nodes[0], "content")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get submission title for %s: %v", path, err)
 	}
@@ -77,7 +87,7 @@ func ExtractSubmissionInfo(path SubmissionPath, doc *goquery.Document) (*Submiss
 		}
 	}
 
-	desc, err := GetNodeAttr(descSel.Nodes[0], "content")
+	desc, err := internal.GetNodeAttr(descSel.Nodes[0], "content")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get submission title for %s: %v", path, err)
 	}
@@ -85,6 +95,7 @@ func ExtractSubmissionInfo(path SubmissionPath, doc *goquery.Document) (*Submiss
 	return &Submission{
 		Path:         path,
 		ImgUrl:       submissionImgLink,
+		ImgType:      mediaType,
 		ThumbUrl:     submissionThumbLink,
 		Title:        title,
 		Description:  desc,

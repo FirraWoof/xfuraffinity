@@ -2,7 +2,10 @@ package xfuraffinity
 
 import (
 	"fmt"
-	"github.com/firrawoof/xfuraffinity/requesting_entities"
+	"github.com/firrawoof/xfuraffinity/internal"
+	"github.com/firrawoof/xfuraffinity/internal/requesting_entities"
+	"github.com/firrawoof/xfuraffinity/internal/submission"
+	"github.com/firrawoof/xfuraffinity/internal/submission_path"
 	"io"
 	"log"
 	"net/http"
@@ -23,7 +26,7 @@ func init() {
 	faUrl, _ := url.Parse("https://www.furaffinity.net")
 	faSession := os.Getenv("FURAFFINITY_SESSION")
 
-	err := LoadCookiesFromJson(faUrl, jar, faSession)
+	err := internal.LoadCookiesFromJson(faUrl, jar, faSession)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +47,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	var writeError error
 	if err != nil {
 		log.Print(err)
-		_, writeError = w.Write([]byte(serverErrorEmbed))
+		_, writeError = w.Write([]byte(submission.ServerErrorEmbed))
 	} else {
 		_, writeError = w.Write([]byte(response))
 	}
@@ -55,19 +58,19 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRootRequest() string {
-	return generateRedirectPage("https://firrawoof.github.io/xfuraffinity/")
+	return submission.GenerateRedirectPage("https://firrawoof.github.io/xfuraffinity/")
 }
 
 func handleSubmissionRequest(r *http.Request) (string, error) {
 	var response string
 
-	path, err := ValidateSubmissionPath(r.URL.Path)
+	path, err := submission_path.ValidateSubmissionPath(r.URL.Path)
 	if err != nil {
 		log.Printf("user provided an invalid path: %v", err)
-		return badPathEmbed, nil
+		return submission.BadPathEmbed, nil
 	}
 
-	requestingEntity := DetermineRequestingEntity(r.UserAgent())
+	requestingEntity := requesting_entities.DetermineRequestingEntity(r.UserAgent())
 	if requestingEntity != requesting_entities.Human {
 		log.Print("user agent appears to be a bot: generating embed")
 		response, err = handleBotRequest(path, requestingEntity)
@@ -83,13 +86,12 @@ func handleSubmissionRequest(r *http.Request) (string, error) {
 	return response, nil
 }
 
-func handleHumanRequest(path SubmissionPath) (string, error) {
-	return generateRedirectPage("https://furaffinity.net" + path.FullPath), nil
+func handleHumanRequest(path submission_path.Path) (string, error) {
+	return submission.GenerateRedirectPage("https://furaffinity.net" + path.FullPath), nil
 }
 
-func handleBotRequest(path SubmissionPath, entity requesting_entities.Entity) (embed string, err error) {
-	postUrl := "https://furaffinity.net" + path.FullPath
-	resp, err := httpClient.Get(postUrl)
+func handleBotRequest(path submission_path.Path, entity requesting_entities.Entity) (embed string, err error) {
+	resp, err := httpClient.Get(path.SubmissionUrl)
 	if err != nil {
 		return "", fmt.Errorf("fetch submission %s: %w", path, err)
 	}
@@ -109,18 +111,16 @@ func handleBotRequest(path SubmissionPath, entity requesting_entities.Entity) (e
 		return "", fmt.Errorf("failed to parse html from %s: %v", path, err)
 	}
 
-	submissionData, err := ExtractSubmissionInfo(path, doc)
+	submissionData, err := submission.ExtractSubmissionInfo(path, doc)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract submission info: %v", err)
 	}
 
-	embedImageUrl := submissionData.ImgUrl
-
 	resp, err = httpClient.Head(submissionData.ImgUrl)
 	// AFAIK only TG refuses to render embeds with media over a certain size
-	if resp.ContentLength >= fiveMB && entity == requesting_entities.Telegram {
-		embedImageUrl = submissionData.ThumbUrl
+	if submissionData.ImgType != "gif" && resp.ContentLength >= fiveMB && entity == requesting_entities.Telegram {
+		submissionData.ImgUrl = submissionData.ThumbUrl
 	}
 
-	return generateEmbed(submissionData.Title, submissionData.Description, postUrl, embedImageUrl), nil
+	return submissionData.GenerateEmbed(), nil
 }
