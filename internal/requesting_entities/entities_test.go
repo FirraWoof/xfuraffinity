@@ -1,9 +1,8 @@
-package xfuraffinity_test
+package requesting_entities
 
 import (
+	"github.com/firrawoof/xfuraffinity/internal/submission_path"
 	"testing"
-
-	"github.com/firrawoof/xfuraffinity"
 )
 
 func Test_GivenAValidPath_WhenValidatingSubmissionPath_ThenThePathIsRetured(t *testing.T) {
@@ -22,7 +21,7 @@ func Test_GivenAValidPath_WhenValidatingSubmissionPath_ThenThePathIsRetured(t *t
 	}
 
 	for _, tt := range validPaths {
-		actual, err := xfuraffinity.ValidateSubmissionPath(tt.path)
+		actual, err := submission_path.ValidateSubmissionPath(tt.path)
 		if err != nil {
 			t.Errorf("ValidateSubmissionPath(%s): error %v", tt.path, err)
 		}
@@ -33,17 +32,6 @@ func Test_GivenAValidPath_WhenValidatingSubmissionPath_ThenThePathIsRetured(t *t
 
 		if actual.SubmissionId != tt.id {
 			t.Errorf("ValidateSubmissionPath(%s): expected id %s, actual %s", tt.path, tt.id, actual.SubmissionId)
-		}
-	}
-}
-
-func Test_GivenAnInvalidPath_WhenValidatingSubmissionPath_ThenFalseIsReturned(t *testing.T) {
-	var invalidPaths = []string{"../watch/me", "/../watch/me", "/view/", "/view/not-an-id", "\x00/watch/me"}
-
-	for _, tt := range invalidPaths {
-		actual, err := xfuraffinity.ValidateSubmissionPath(tt)
-		if err == nil {
-			t.Errorf("ValidateSubmissionPath(%s): expected error, actual %v", tt, actual)
 		}
 	}
 }
