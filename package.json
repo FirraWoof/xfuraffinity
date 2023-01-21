@@ -2,7 +2,8 @@
 	"private": true,
 	"version": "0.1.0",
 	"scripts": {
-		"deploy": "wrangler publish",
+		"deploy:prod": "wrangler publish --env production",
+		"deploy:staging": "wrangler publish --env staging",
 		"dev": "wrangler dev --local"
 	},
 	"devDependencies": {
