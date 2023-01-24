@@ -1,6 +1,9 @@
+use handlers::handle_submission;
 use serde_json::json;
 use worker::*;
 
+mod furaffinity;
+mod handlers;
 mod utils;
 
 fn log_request(req: &Request) {
@@ -48,6 +51,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
             Response::ok(version)
         })
+        .get_async("/view/:id", handle_submission)
         .run(req, env)
         .await
 }
