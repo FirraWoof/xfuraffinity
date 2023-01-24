@@ -7,3 +7,5 @@ wasm-pack.log
 build/
 /target
 /dist
+
+.env
