@@ -3,7 +3,7 @@ use worker::{Request, Response, RouteContext};
 use crate::furaffinity::client::FurAffinity;
 
 pub async fn handle_submission(
-    mut req: Request,
+    mut _req: Request,
     context: RouteContext<FurAffinity>,
 ) -> Result<Response, worker::Error> {
     let info = context
