@@ -1,5 +1,7 @@
+use furaffinity::client::FurAffinity;
 use handlers::handle_submission;
 use serde_json::json;
+use utils::get_furaffinity_session;
 use worker::*;
 
 mod furaffinity;
@@ -22,13 +24,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     utils::set_panic_hook();
 
     // Optionally, use the Router to handle matching endpoints, use ":name" placeholders, or "*name"
-    // catch-alls to match on specific patterns. Alternatively, use `Router::with_data(D)` to
-    // provide arbitrary data that will be accessible in each route via the `ctx.data()` method.
-    let router = Router::new();
+    // catch-alls to match on specific patterns.
+    let session = get_furaffinity_session(&env);
+    let client = FurAffinity::new(session);
+    let router = Router::with_data(client);
 
-    // Add as many routes as your Worker needs! Each route will get a `Request` for handling HTTP
-    // functionality and a `RouteContext` which you can use to  and get route parameters and
-    // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |_, _| Response::ok("Hello from Workers!"))
         .post_async("/form/:field", |mut req, ctx| async move {
@@ -51,7 +51,12 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
             Response::ok(version)
         })
+        .get("/secrets-test", |_, ctx| {
+            let version = ctx.secret("ASDF")?.to_string();
+            Response::ok(version)
+        })
         .get_async("/view/:id", handle_submission)
+        .get_async("/view/:id/", handle_submission)
         .run(req, env)
         .await
 }

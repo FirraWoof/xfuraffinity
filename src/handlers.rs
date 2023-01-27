@@ -1,14 +1,13 @@
 use worker::{Request, Response, RouteContext};
 
-use crate::furaffinity::client::{FurAffinity, FurAffinitySession};
+use crate::furaffinity::client::FurAffinity;
 
 pub async fn handle_submission(
     mut req: Request,
-    context: RouteContext<()>,
+    context: RouteContext<FurAffinity>,
 ) -> Result<Response, worker::Error> {
-    let client = FurAffinity::new(FurAffinitySession::new("".to_string(), "".to_string()));
-
-    let info = client
+    let info = context
+        .data
         .fetch_submission_info(context.param("id").unwrap().parse().unwrap())
         .await
         .unwrap();

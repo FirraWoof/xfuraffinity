@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom, ops::Deref};
 
 use anyhow::{anyhow, Context, Result};
 use serde::Serialize;
@@ -91,4 +91,20 @@ pub enum ContentType {
     ImagePng,
     ImageGif,
     VideoMp4,
+}
+
+pub struct FileExtension<'a>(&'a str);
+
+impl<'a> FileExtension<'a> {
+    pub fn new(extension: &'a str) -> Self {
+        FileExtension(extension)
+    }
+}
+
+impl Deref for FileExtension<'_> {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
 }
