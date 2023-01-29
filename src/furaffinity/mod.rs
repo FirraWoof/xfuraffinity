@@ -1,3 +1,5 @@
 pub mod client;
-mod html_wrapper;
-pub mod parser;
+pub mod html_wrapper;
+mod image_url;
+pub mod submission_info;
+pub mod submission_media;

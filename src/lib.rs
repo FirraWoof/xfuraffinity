@@ -3,6 +3,7 @@ use handlers::handle_submission;
 use utils::get_furaffinity_session;
 use worker::*;
 
+mod embed_generator;
 mod furaffinity;
 mod handlers;
 mod utils;

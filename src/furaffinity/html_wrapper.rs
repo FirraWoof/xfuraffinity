@@ -1,5 +1,18 @@
+use std::ops::Deref;
+
 use anyhow::{anyhow, Context, Result};
 use scraper::{ElementRef, Selector};
+
+#[derive(Debug)]
+pub struct HtmlString(pub String);
+
+impl Deref for HtmlString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref()
+    }
+}
 
 pub struct HtmlElement<'a> {
     element: ElementRef<'a>,

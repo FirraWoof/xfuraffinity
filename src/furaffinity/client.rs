@@ -1,10 +1,10 @@
-use std::{convert::TryFrom, ops::Deref};
+use std::convert::TryFrom;
 
 use anyhow::{anyhow, Context, Result};
-use serde::Serialize;
 use worker::{Fetch, Method, Request, Response};
 
-// TODO: Furaffinity client abstracting auth and whatnot
+use super::{html_wrapper::HtmlString, image_url::ImageUrl, submission_info::SubmissionInfo};
+
 #[derive(Debug)]
 pub struct FurAffinity {
     credentials: FurAffinitySession,
@@ -19,15 +19,6 @@ pub struct FurAffinitySession {
 impl FurAffinitySession {
     pub fn new(a: String, b: String) -> Self {
         FurAffinitySession { a, b }
-    }
-}
-
-#[derive(Debug)]
-pub struct HtmlString(String);
-
-impl HtmlString {
-    pub fn value(self) -> String {
-        self.0
     }
 }
 
@@ -65,46 +56,21 @@ impl FurAffinity {
 
         SubmissionInfo::try_from(HtmlString(submission_html))
     }
-}
 
-#[derive(Debug, Serialize)]
-pub struct SubmissionInfo {
-    pub url: String,
-    pub title: String,
-    pub description: String,
-    pub view_count: usize,
-    pub comment_count: usize,
-    pub fave_count: usize,
-    pub submission_media: Media,
-    pub thumbnail_media: Media,
-}
+    pub async fn fetch_image_size(&self, image_url: &ImageUrl) -> Result<usize> {
+        let submission_response = self
+            .fetch(image_url, Method::Head)
+            .await
+            .with_context(|| "Failed to query FA for submission info".to_string())?;
 
-#[derive(Debug, Serialize)]
-pub struct Media {
-    pub download_url: String,
-    pub content_type: ContentType,
-}
+        let image_size = submission_response
+            .headers()
+            .get("content-length")
+            .unwrap()
+            .ok_or_else(|| anyhow!("content-length header missing"))?
+            .parse()
+            .with_context(|| "Could not parse content-length header value")?;
 
-#[derive(Debug, Serialize)]
-pub enum ContentType {
-    ImageJpeg,
-    ImagePng,
-    ImageGif,
-    VideoMp4,
-}
-
-pub struct FileExtension<'a>(&'a str);
-
-impl<'a> FileExtension<'a> {
-    pub fn new(extension: &'a str) -> Self {
-        FileExtension(extension)
-    }
-}
-
-impl Deref for FileExtension<'_> {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        self.0
+        Ok(image_size)
     }
 }
