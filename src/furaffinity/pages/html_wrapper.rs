@@ -1,18 +1,5 @@
-use std::ops::Deref;
-
 use anyhow::{anyhow, Context, Result};
 use scraper::{ElementRef, Selector};
-
-#[derive(Debug)]
-pub struct HtmlString(pub String);
-
-impl Deref for HtmlString {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        self.0.as_ref()
-    }
-}
 
 pub struct HtmlElement<'a> {
     element: ElementRef<'a>,
@@ -30,7 +17,12 @@ impl<'a> HtmlElement<'a> {
             .element
             .select(&Selector::parse(selection).unwrap())
             .next()
-            .ok_or_else(|| anyhow!("Selector `{}` matched no DOM elements", selection))?
+            .ok_or_else(|| {
+                anyhow!(
+                    "Selector `{selection}` matched no DOM elements on `{:?}`",
+                    self.element.value()
+                )
+            })?
             .into())
     }
 
@@ -38,7 +30,12 @@ impl<'a> HtmlElement<'a> {
         self.element
             .value()
             .attr(attr)
-            .with_context(|| format!("Could not find attr `{}` on DOM element", attr))
+            .with_context(|| {
+                format!(
+                    "Could not find attr `{attr}` on DOM element `{:?}`",
+                    self.element.value()
+                )
+            })
             .map(|v| v.to_string())
     }
 

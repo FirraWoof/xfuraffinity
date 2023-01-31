@@ -1,5 +1,5 @@
 pub mod client;
-pub mod html_wrapper;
-mod image_url;
+pub mod content_type;
+pub mod image_url;
+mod pages;
 pub mod submission_info;
-pub mod submission_media;

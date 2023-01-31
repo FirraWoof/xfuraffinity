@@ -1,9 +1,10 @@
-use std::convert::TryFrom;
-
 use anyhow::{anyhow, Context, Result};
-use worker::{Fetch, Method, Request, Response};
+use scraper::Html;
+use worker::{console_log, Fetch, Method, Request, Response};
 
-use super::{html_wrapper::HtmlString, image_url::ImageUrl, submission_info::SubmissionInfo};
+use super::{
+    image_url::ImageUrl, pages::submission::SubmissionPage, submission_info::SubmissionInfo,
+};
 
 #[derive(Debug)]
 pub struct FurAffinity {
@@ -28,6 +29,7 @@ impl FurAffinity {
     }
 
     async fn fetch(&self, uri: &str, method: Method) -> Result<Response> {
+        console_log!("{method:?}\t{uri}");
         let mut req = Request::new(uri, method).unwrap();
 
         let session_cookie = format!("a={}; b={}", self.credentials.a, self.credentials.b);
@@ -44,6 +46,7 @@ impl FurAffinity {
 
     pub async fn fetch_submission_info(&self, submission_id: usize) -> Result<SubmissionInfo> {
         let submission_url = format!("https://furaffinity.net/view/{}", submission_id);
+
         let mut submission_response = self
             .fetch(&submission_url, Method::Get)
             .await
@@ -54,10 +57,27 @@ impl FurAffinity {
             .await
             .map_err(|e| anyhow!("Could not parse the response from FA: {}", e))?;
 
-        SubmissionInfo::try_from(HtmlString(submission_html))
+        let document = Html::parse_document(submission_html.as_ref());
+        let page = SubmissionPage::new(&document);
+
+        let image_size = self
+            .fetch_image_size(&page.get_submission_download_url()?)
+            .await?;
+
+        Ok(SubmissionInfo {
+            url: page.get_url()?,
+            title: page.get_title()?,
+            description: page.get_description()?,
+            view_count: page.get_view_count()?,
+            comment_count: page.get_comment_count()?,
+            fave_count: page.get_fave_count()?,
+            submission_image_url: ImageUrl::new(page.get_submission_download_url()?),
+            submission_size_bytes: image_size,
+            thumbnail_image_url: ImageUrl::new(page.get_thumbnail_download_url()?),
+        })
     }
 
-    pub async fn fetch_image_size(&self, image_url: &ImageUrl) -> Result<usize> {
+    async fn fetch_image_size(&self, image_url: &str) -> Result<usize> {
         let submission_response = self
             .fetch(image_url, Method::Head)
             .await

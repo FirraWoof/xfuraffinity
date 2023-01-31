@@ -6,6 +6,7 @@ use worker::*;
 mod embed_generator;
 mod furaffinity;
 mod handlers;
+mod requester;
 mod utils;
 
 fn log_request(req: &Request) {

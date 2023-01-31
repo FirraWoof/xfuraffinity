@@ -3,9 +3,9 @@ use std::ops::Deref;
 
 use serde::Serialize;
 
-use super::submission_media::ContentType;
+use super::content_type::ContentType;
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize)]
 pub struct ImageUrl(String);
 
 impl Deref for ImageUrl {
