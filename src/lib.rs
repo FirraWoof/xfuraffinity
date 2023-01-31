@@ -1,23 +1,14 @@
 use furaffinity::client::FurAffinity;
-use handlers::handle_submission;
-use utils::get_furaffinity_session;
+use submission_handler::handle_submission;
+use utils::{get_furaffinity_session, log_request};
 use worker::*;
 
+mod alerting;
 mod embed_generator;
 mod furaffinity;
-mod handlers;
 mod requester;
+mod submission_handler;
 mod utils;
-
-fn log_request(req: &Request) {
-    console_log!(
-        "{} - [{}], located at: {:?}, within: {}",
-        Date::now().to_string(),
-        req.path(),
-        req.cf().coordinates().unwrap_or_default(),
-        req.cf().region().unwrap_or_else(|| "unknown region".into())
-    );
-}
 
 #[event(fetch)]
 pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {

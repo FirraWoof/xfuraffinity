@@ -1,5 +1,5 @@
 use cfg_if::cfg_if;
-use worker::Env;
+use worker::{console_log, Date, Env, Request};
 
 use crate::furaffinity::client::FurAffinitySession;
 
@@ -13,24 +13,28 @@ cfg_if! {
     }
 }
 
-pub fn get_furaffinity_session(env: &Env) -> FurAffinitySession {
+pub fn log_request(req: &Request) {
+    console_log!(
+        "{} - [{}], located at: {:?}, within: {}",
+        Date::now().to_string(),
+        req.path(),
+        req.cf().coordinates().unwrap_or_default(),
+        req.cf().region().unwrap_or_else(|| "unknown region".into())
+    );
+}
+
+pub fn get_secret(env: &Env, var: &str) -> String {
     if env.var("WORKERS_RS_VERSION").is_ok() {
-        FurAffinitySession::new(
-            env.secret("SESSION_A")
-                .expect("Missing SESSION_A secret")
-                .to_string(),
-            env.secret("SESSION_B")
-                .expect("Missing SESSION_B secret")
-                .to_string(),
-        )
+        env.secret(var)
+            .unwrap_or_else(|_| panic!("Missing required secret {}", var))
+            .to_string()
     } else {
-        FurAffinitySession::new(
-            env.var("SESSION_A")
-                .expect("Missing SESSION_A env var")
-                .to_string(),
-            env.var("SESSION_B")
-                .expect("Missing SESSION_B env var")
-                .to_string(),
-        )
+        env.var(var)
+            .unwrap_or_else(|_| panic!("Missing required variable {}", var))
+            .to_string()
     }
+}
+
+pub fn get_furaffinity_session(env: &Env) -> FurAffinitySession {
+    FurAffinitySession::new(get_secret(env, "SESSION_A"), get_secret(env, "SESSION_B"))
 }

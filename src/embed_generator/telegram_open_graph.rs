@@ -1,7 +1,7 @@
 use crate::furaffinity::{
     content_type::ContentType, image_url::ImageUrl, submission_info::SubmissionInfo,
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use super::html_string::HtmlString;
 
@@ -12,10 +12,13 @@ pub fn generate_telegram_opengraph_embed(submission: &SubmissionInfo) -> Result<
     let title = &submission.title;
     let description = &submission.description;
     let submission_url = &submission.url;
-    let embed_image_url = choose_embed_url(submission)?;
+    let embed_image_url =
+        choose_embed_url(submission).with_context(|| "Could not generate telegram embed")?;
     let embed_image_url_str: &str = embed_image_url.as_ref();
 
-    let content_type = embed_image_url.guess_content_type()?;
+    let content_type = embed_image_url
+        .guess_content_type()
+        .with_context(|| "Could not generate telegram embed")?;
     let content_type_str = match content_type {
         ContentType::ImageJpeg => "image/jpg",
         ContentType::ImagePng => "image/png",

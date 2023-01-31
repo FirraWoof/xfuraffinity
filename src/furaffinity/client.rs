@@ -6,6 +6,8 @@ use super::{
     image_url::ImageUrl, pages::submission::SubmissionPage, submission_info::SubmissionInfo,
 };
 
+const BASE_URL: &str = "https://www.furaffinity.net";
+
 #[derive(Debug)]
 pub struct FurAffinity {
     credentials: FurAffinitySession,
@@ -44,13 +46,17 @@ impl FurAffinity {
             .map_err(|e| anyhow!("{}", e))
     }
 
+    pub fn get_submission_url(&self, submission_id: usize) -> String {
+        format!("{BASE_URL}/view/{submission_id}")
+    }
+
     pub async fn fetch_submission_info(&self, submission_id: usize) -> Result<SubmissionInfo> {
-        let submission_url = format!("https://furaffinity.net/view/{}", submission_id);
+        let submission_url = self.get_submission_url(submission_id);
 
         let mut submission_response = self
             .fetch(&submission_url, Method::Get)
             .await
-            .with_context(|| "Failed to query FA for submission info".to_string())?;
+            .with_context(|| "Failed to fetch submission info from FA")?;
 
         let submission_html = submission_response
             .text()
@@ -81,7 +87,7 @@ impl FurAffinity {
         let submission_response = self
             .fetch(image_url, Method::Head)
             .await
-            .with_context(|| "Failed to query FA for submission info".to_string())?;
+            .with_context(|| "Failed to query FA for submission info")?;
 
         let image_size = submission_response
             .headers()

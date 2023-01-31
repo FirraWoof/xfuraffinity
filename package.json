@@ -4,7 +4,7 @@
 	"scripts": {
 		"deploy:prod": "wrangler publish --env production",
 		"deploy:staging": "wrangler publish --env staging",
-		"dev": "wrangler dev --local --var SESSION_A:$SESSION_A --var SESSION_B:$SESSION_B"
+		"dev": "wrangler dev --local --var ALERTING_URL:$ALERTING_URL --var SESSION_A:$SESSION_A --var SESSION_B:$SESSION_B"
 	},
 	"devDependencies": {
 		"wrangler": "^2.0.0"
