@@ -3,6 +3,7 @@ use worker::{Request, Response, RouteContext, Url};
 
 use crate::alerting::send_alert;
 use crate::embed_generator::default_open_graph::generate_default_opengraph_embed;
+use crate::embed_generator::generic_embed_open_graph::generate_generic_opengraph_embed;
 use crate::embed_generator::message_open_graph::generate_message_opengraph_embed;
 use crate::embed_generator::telegram_embed_open_graph::generate_telegram_opengraph_embed;
 use crate::{furaffinity::client::FurAffinity, requester::Requester};
@@ -59,7 +60,7 @@ async fn handle_submission_inner(
 
     let embed = match requester {
         Requester::Telegram => generate_telegram_opengraph_embed(&info)?,
-        Requester::OtherBot => todo!(),
+        Requester::OtherBot => generate_generic_opengraph_embed(&info)?,
         Requester::Human => panic!("Humans are handled above"),
     };
 
