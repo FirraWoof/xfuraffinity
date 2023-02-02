@@ -1,4 +1,4 @@
-use worker::{Env, Fetch, Headers, Method, Request, RequestInit};
+use worker::{console_error, Env, Fetch, Headers, Method, Request, RequestInit};
 
 use crate::utils::get_secret;
 
@@ -13,11 +13,11 @@ pub async fn send_alert(env: &Env, body: &str) {
     req_ini.with_method(Method::Post);
     req_ini.with_body(Some(body.into()));
 
-    let req = Request::new_with_init(&webhook_url, &req_ini)
-        .expect("Could not create the request to send an alert");
+    let req = Request::new_with_init(&webhook_url, &req_ini).unwrap();
 
-    Fetch::Request(req)
-        .send()
-        .await
-        .expect("Could not send the alert");
+    let send_result = Fetch::Request(req).send().await;
+
+    if let Err(e) = send_result {
+        console_error!("{e}");
+    }
 }
