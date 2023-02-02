@@ -60,10 +60,10 @@ impl OpenGraphBuilder {
     pub fn with_video(&mut self, video_url: &str, content_type: &str) -> &mut Self {
         self.metadata.push(format!(
             r#"
-            <meta property="og:video" content="{video_url}">
-            <meta property="og:video:url" content="{video_url}">
-            <meta property="og:video:secure_url" content="{video_url}">
-            <meta property="og:video:type" content="{content_type}">
+            <meta property="og:video" content="{video_url}" />
+            <meta property="og:video:url" content="{video_url}" />
+            <meta property="og:video:secure_url" content="{video_url}" />
+            <meta property="og:video:type" content="{content_type}" />
             "#
         ));
 
