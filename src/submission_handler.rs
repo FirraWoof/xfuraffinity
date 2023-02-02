@@ -4,7 +4,7 @@ use worker::{Request, Response, RouteContext, Url};
 use crate::alerting::send_alert;
 use crate::embed_generator::default_open_graph::generate_default_opengraph_embed;
 use crate::embed_generator::message_open_graph::generate_message_opengraph_embed;
-use crate::embed_generator::telegram_open_graph::generate_telegram_opengraph_embed;
+use crate::embed_generator::telegram_embed_open_graph::generate_telegram_opengraph_embed;
 use crate::{furaffinity::client::FurAffinity, requester::Requester};
 
 pub async fn handle_submission(
