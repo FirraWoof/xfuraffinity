@@ -1,15 +1,11 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+.DS_Store
+/node_modules
 
-# Test binary, built with `go test -c`
-*.test
+**/*.rs.bk
+wasm-pack.log
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+build/
+/target
+/dist
 
-.idea/
 .env
