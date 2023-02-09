@@ -58,11 +58,12 @@ impl FurAffinity {
             .await
             .with_context(|| "Failed to fetch submission info from FA")?;
 
-        let submission_html = submission_response
-            .text()
+        let submission_bytes = submission_response
+            .bytes()
             .await
-            .map_err(|e| anyhow!("Could not parse the response from FA: {}", e))?;
+            .map_err(|e| anyhow!("Could not get bytes from FA response: {}", e))?;
 
+        let submission_html = String::from_utf8_lossy(&submission_bytes);
         let document = Html::parse_document(submission_html.as_ref());
         let page = SubmissionPage::new(&document);
 
