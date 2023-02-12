@@ -1,5 +1,10 @@
 use super::html_string::HtmlString;
 
+pub enum TwitterCardType {
+    Summary,
+    SummaryLargeImage,
+}
+
 pub struct OpenGraphBuilder {
     metadata: Vec<String>,
 }
@@ -75,10 +80,24 @@ impl OpenGraphBuilder {
             r#"
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
             <meta property="og:type" content="website" />
-            <meta name="twitter:card" content="summary_large_image" />
             "#
             .to_owned(),
         );
+
+        self
+    }
+
+    pub fn with_twitter_card(&mut self, card_type: TwitterCardType) -> &mut Self {
+        let content_value = match card_type {
+            TwitterCardType::Summary => "summary",
+            TwitterCardType::SummaryLargeImage => "summary_large_image",
+        };
+
+        self.metadata.push(format!(
+            r#"
+            <meta name="twitter:card" content="{content_value}" />
+            "#
+        ));
 
         self
     }

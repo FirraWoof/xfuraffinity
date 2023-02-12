@@ -1,12 +1,16 @@
 use crate::furaffinity::{content_type::ContentType, submission_info::SubmissionInfo};
 use anyhow::{Context, Result};
 
-use super::{html_string::HtmlString, open_graph_builder::OpenGraphBuilder};
+use super::{
+    html_string::HtmlString,
+    open_graph_builder::{OpenGraphBuilder, TwitterCardType},
+};
 
 pub fn generate_generic_opengraph_embed(submission: &SubmissionInfo) -> Result<HtmlString> {
     let mut builder = OpenGraphBuilder::new();
     builder
         .with_default_metadata()
+        .with_twitter_card(TwitterCardType::SummaryLargeImage)
         .with_title(&submission.title)
         .with_description(&submission.description)
         .with_website_url(&submission.url);

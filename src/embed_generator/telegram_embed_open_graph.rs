@@ -3,7 +3,10 @@ use crate::furaffinity::{
 };
 use anyhow::{Context, Result};
 
-use super::{html_string::HtmlString, open_graph_builder::OpenGraphBuilder};
+use super::{
+    html_string::HtmlString,
+    open_graph_builder::{OpenGraphBuilder, TwitterCardType},
+};
 
 const FIVE_MB: usize = 1024 * 1024 * 5;
 
@@ -11,6 +14,7 @@ pub fn generate_telegram_opengraph_embed(submission: &SubmissionInfo) -> Result<
     let mut builder = OpenGraphBuilder::new();
     builder
         .with_default_metadata()
+        .with_twitter_card(TwitterCardType::SummaryLargeImage)
         .with_title(&submission.title)
         .with_description(&submission.description)
         .with_website_url(&submission.url);

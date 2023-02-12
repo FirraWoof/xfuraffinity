@@ -1,11 +1,9 @@
 use anyhow::{anyhow, Result};
 use std::ops::Deref;
 
-use serde::Serialize;
-
 use super::content_type::ContentType;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct ImageUrl(String);
 
 impl Deref for ImageUrl {

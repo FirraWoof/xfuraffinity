@@ -3,7 +3,12 @@ use scraper::Html;
 use worker::{console_log, Fetch, Method, Request, Response};
 
 use super::{
-    image_url::ImageUrl, pages::submission::SubmissionPage, submission_info::SubmissionInfo,
+    image_url::ImageUrl,
+    pages::submission::{
+        SubmissionPage,
+        SubmissionPageVariant::{FlashSubmission, ImageSubmission, NotFound},
+    },
+    submission_info::{SubmissionInfo, SubmissionInfoResponse},
 };
 
 const BASE_URL: &str = "https://www.furaffinity.net";
@@ -50,13 +55,20 @@ impl FurAffinity {
         format!("{BASE_URL}/view/{submission_id}")
     }
 
-    pub async fn fetch_submission_info(&self, submission_id: usize) -> Result<SubmissionInfo> {
+    pub async fn fetch_submission_info(
+        &self,
+        submission_id: usize,
+    ) -> Result<SubmissionInfoResponse> {
         let submission_url = self.get_submission_url(submission_id);
 
         let mut submission_response = self
             .fetch(&submission_url, Method::Get)
             .await
             .with_context(|| "Failed to fetch submission info from FA")?;
+
+        if submission_response.status_code() >= 500 {
+            return Ok(SubmissionInfoResponse::ServerError);
+        }
 
         let submission_bytes = submission_response
             .bytes()
@@ -67,11 +79,19 @@ impl FurAffinity {
         let document = Html::parse_document(submission_html.as_ref());
         let page = SubmissionPage::new(&document);
 
+        let page_variant = page.get_variant();
+        console_log!("Submission page is of variant {page_variant:?}");
+        match page_variant {
+            NotFound => return Ok(SubmissionInfoResponse::NotFound),
+            FlashSubmission => return Ok(SubmissionInfoResponse::FlashSubmission),
+            ImageSubmission => {}
+        }
+
         let image_size = self
             .fetch_image_size(&page.get_submission_download_url()?)
             .await?;
 
-        Ok(SubmissionInfo {
+        Ok(SubmissionInfoResponse::ImageSubmission(SubmissionInfo {
             url: page.get_url()?,
             title: page.get_title()?,
             description: page.get_description()?,
@@ -81,7 +101,7 @@ impl FurAffinity {
             submission_image_url: ImageUrl::new(page.get_submission_download_url()?),
             submission_size_bytes: image_size,
             thumbnail_image_url: ImageUrl::new(page.get_thumbnail_download_url()?),
-        })
+        }))
     }
 
     async fn fetch_image_size(&self, image_url: &str) -> Result<usize> {
