@@ -1268,7 +1268,5 @@ dependencies = [
  "cfg-if",
  "console_error_panic_hook",
  "scraper",
- "serde",
- "serde_json",
  "worker",
 ]

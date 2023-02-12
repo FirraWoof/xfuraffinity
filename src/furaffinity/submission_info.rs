@@ -1,8 +1,14 @@
-use serde::Serialize;
-
 use super::image_url::ImageUrl;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+pub enum SubmissionInfoResponse {
+    ImageSubmission(SubmissionInfo),
+    FlashSubmission,
+    NotFound,
+    ServerError,
+}
+
+#[derive(Debug)]
 pub struct SubmissionInfo {
     pub url: String,
     pub title: String,

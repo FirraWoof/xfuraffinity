@@ -1,6 +1,4 @@
-use serde::Serialize;
-
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub enum ContentType {
     ImageJpeg,
     ImagePng,

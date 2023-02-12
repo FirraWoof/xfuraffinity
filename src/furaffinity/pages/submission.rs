@@ -2,12 +2,35 @@ use anyhow::{Context, Result};
 use scraper::Html;
 
 use super::html_wrapper::HtmlElement;
+const SUBMISSION_NOT_FOUND_TEXT: &str =
+    "The submission you are trying to find is not in our database.";
+
+#[derive(Debug)]
+pub enum SubmissionPageVariant {
+    NotFound,
+    ImageSubmission,
+    FlashSubmission,
+}
 
 pub struct SubmissionPage<'a>(HtmlElement<'a>);
-
 impl<'a> SubmissionPage<'a> {
     pub fn new(html: &'a Html) -> Self {
         SubmissionPage(HtmlElement::from(html.root_element()))
+    }
+
+    pub fn get_variant(&self) -> SubmissionPageVariant {
+        let section_body = self.0.select(".section-body");
+        if let Ok(section_body) = section_body {
+            if section_body.text().contains(SUBMISSION_NOT_FOUND_TEXT) {
+                return SubmissionPageVariant::NotFound;
+            }
+        }
+
+        if self.0.select("#flash_embed").is_ok() {
+            return SubmissionPageVariant::FlashSubmission;
+        }
+
+        SubmissionPageVariant::ImageSubmission
     }
 
     pub fn get_url(&self) -> Result<String> {
