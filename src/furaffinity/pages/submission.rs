@@ -4,10 +4,12 @@ use scraper::Html;
 use super::html_wrapper::HtmlElement;
 const SUBMISSION_NOT_FOUND_TEXT: &str =
     "The submission you are trying to find is not in our database.";
+const UNAUTHENTICATED_TEXT: &str = "please log in or create an account";
 
 #[derive(Debug)]
 pub enum SubmissionPageVariant {
     NotFound,
+    Unauthenticated,
     ImageSubmission,
     FlashSubmission,
 }
@@ -23,6 +25,10 @@ impl<'a> SubmissionPage<'a> {
         if let Ok(section_body) = section_body {
             if section_body.text().contains(SUBMISSION_NOT_FOUND_TEXT) {
                 return SubmissionPageVariant::NotFound;
+            }
+
+            if section_body.text().contains(UNAUTHENTICATED_TEXT) {
+                return SubmissionPageVariant::Unauthenticated;
             }
         }
 

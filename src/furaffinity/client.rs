@@ -2,12 +2,11 @@ use anyhow::{anyhow, Context, Result};
 use scraper::Html;
 use worker::{console_log, Fetch, Method, Request, Response};
 
+use crate::furaffinity::pages::submission::SubmissionPageVariant;
+
 use super::{
     image_url::ImageUrl,
-    pages::submission::{
-        SubmissionPage,
-        SubmissionPageVariant::{FlashSubmission, ImageSubmission, NotFound},
-    },
+    pages::submission::SubmissionPage,
     submission_info::{SubmissionInfo, SubmissionInfoResponse},
 };
 
@@ -82,9 +81,14 @@ impl FurAffinity {
         let page_variant = page.get_variant();
         console_log!("Submission page is of variant {page_variant:?}");
         match page_variant {
-            NotFound => return Ok(SubmissionInfoResponse::NotFound),
-            FlashSubmission => return Ok(SubmissionInfoResponse::FlashSubmission),
-            ImageSubmission => {}
+            SubmissionPageVariant::NotFound => return Ok(SubmissionInfoResponse::NotFound),
+            SubmissionPageVariant::Unauthenticated => {
+                return Err(anyhow!("Invalid FurAffinity credentials"))
+            }
+            SubmissionPageVariant::FlashSubmission => {
+                return Ok(SubmissionInfoResponse::FlashSubmission)
+            }
+            SubmissionPageVariant::ImageSubmission => {}
         }
 
         let image_size = self
