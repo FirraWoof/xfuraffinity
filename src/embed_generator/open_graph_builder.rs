@@ -78,6 +78,7 @@ impl OpenGraphBuilder {
     pub fn with_default_metadata(&mut self) -> &mut Self {
         self.metadata.push(
             r#"
+            <meta charset="utf-8" />
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
             <meta property="og:type" content="website" />
             "#
