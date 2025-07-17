@@ -27,6 +27,8 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         })
         .get_async("/view/:id", handle_submission)
         .get_async("/view/:id/", handle_submission)
+        .get_async("/full/:id", handle_submission)
+        .get_async("/full/:id/", handle_submission)
         .run(req, env)
         .await
 }
