@@ -1,4 +1,3 @@
-import { guessContentType } from '../furaffinity/imageUrl.js';
 import type { SubmissionInfo } from '../furaffinity/submissionInfo.js';
 import { OpenGraphBuilder } from './openGraphBuilder.js';
 
@@ -13,17 +12,11 @@ export function generateTelegramEmbed(info: SubmissionInfo): string {
     .withUrl(info.url);
 
   const mediaUrl = chooseEmbedUrl(info);
-  const contentTypeResult = guessContentType(mediaUrl);
-  if (contentTypeResult.isErr()) {
-    throw new Error(contentTypeResult.error);
-  }
-
-  const contentType = contentTypeResult.value;
-  if (contentType === 'image/gif' || contentType === 'video/mp4') {
+  if (info.contentType === 'image/gif' || info.contentType === 'video/mp4') {
     // Telegram needs video/mp4 to render GIFs
     builder.withVideo(mediaUrl, 'video/mp4');
   } else {
-    builder.withImage(mediaUrl, contentType);
+    builder.withImage(mediaUrl, info.contentType);
   }
 
   return builder.build();
@@ -34,14 +27,8 @@ function chooseEmbedUrl(info: SubmissionInfo): string {
     return info.imageUrl;
   }
 
-  const contentTypeResult = guessContentType(info.imageUrl);
-  if (contentTypeResult.isErr()) {
-    throw new Error(contentTypeResult.error);
-  }
-
-  const contentType = contentTypeResult.value;
   // GIF and video are kept as-is even if large; images fall back to thumbnail
-  if (contentType === 'image/gif' || contentType === 'video/mp4') {
+  if (info.contentType === 'image/gif' || info.contentType === 'video/mp4') {
     return info.imageUrl;
   }
 

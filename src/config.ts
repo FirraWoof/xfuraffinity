@@ -3,6 +3,7 @@ export type Config = {
   sessionB: string;
   alertingUrl: string;
   port: number;
+  cacheDir: string;
 };
 
 export function loadConfig(): Config {
@@ -23,5 +24,6 @@ export function loadConfig(): Config {
     sessionB,
     alertingUrl: process.env.ALERTING_URL ?? "",
     port: parseInt(process.env.PORT ?? "3000", 10),
+    cacheDir: process.env.CACHE_DIR ?? "./cache",
   };
 }

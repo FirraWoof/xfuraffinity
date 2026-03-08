@@ -8,6 +8,7 @@ export type SubmissionInfo = {
   commentCount: number;
   faveCount: number;
   imageUrl: string;
+  contentType: ContentType;
   sizeBytes: number;
   thumbnailUrl: string;
 };

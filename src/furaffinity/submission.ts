@@ -1,12 +1,21 @@
 import * as cheerio from 'cheerio';
-import type { SubmissionResult } from './submissionInfo.js';
+import type { SubmissionInfo } from './submissionInfo.js';
+
+type SubmissionPageInfo = Omit<SubmissionInfo, 'sizeBytes' | 'contentType'>;
+
+export type SubmissionPageResult =
+  | { type: 'image'; info: SubmissionPageInfo }
+  | { type: 'flash' }
+  | { type: 'notFound' }
+  | { type: 'unauthenticated' }
+  | { type: 'blocked' };
 
 const SUBMISSION_NOT_FOUND_TEXT = 'not in our database';
 const UNAUTHENTICATED_TEXT = 'please log in';
 const CLOUDFLARE_JS_REQUIRED_TEXT = 'enable javascript and cookies to continue';
 const CLOUDFLARE_CHECKING_TEXT = 'checking your browser';
 
-export function parseSubmissionPage(html: string): SubmissionResult {
+export function parseSubmissionPage(html: string): SubmissionPageResult {
   const $ = cheerio.load(html);
 
   if ($('#challenge-form').length > 0) {
@@ -65,7 +74,6 @@ export function parseSubmissionPage(html: string): SubmissionResult {
       commentCount,
       faveCount,
       imageUrl: `https:${downloadHref}`,
-      sizeBytes: 0, // filled in by client after HEAD request
       thumbnailUrl: `https:${thumbnailSrc}`,
     },
   };

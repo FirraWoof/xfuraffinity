@@ -1,4 +1,5 @@
 import { sendAlert } from './alerting.js';
+import { getCached, setCached } from './cache.js';
 import type { Config } from './config.js';
 import { fetchSubmissionInfo } from './furaffinity/client.js';
 import { generateGenericEmbed } from './embedGenerator/genericEmbed.js';
@@ -22,7 +23,9 @@ export async function handleSubmission(
   }
 
   try {
-    const result = await fetchSubmissionInfo(id, { a: config.sessionA, b: config.sessionB });
+    const cached = await getCached(config.cacheDir, id);
+    const result = cached ?? await fetchSubmissionInfo(id, { a: config.sessionA, b: config.sessionB });
+    if (!cached) await setCached(config.cacheDir, id, result);
 
     switch (result.type) {
       case 'image': {

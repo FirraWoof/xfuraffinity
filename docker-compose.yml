@@ -3,6 +3,10 @@ services:
     build: .
     env_file: .dev.vars
     restart: unless-stopped
+    volumes:
+      - fa_cache:/cache
+    environment:
+      CACHE_DIR: /cache
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -10,3 +14,6 @@ services:
     depends_on:
       - app
     restart: unless-stopped
+
+volumes:
+  fa_cache:

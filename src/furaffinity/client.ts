@@ -1,5 +1,6 @@
+import { guessContentType } from './imageUrl.js';
 import { parseSubmissionPage } from './submission.js';
-import type { SubmissionResult } from './submissionInfo.js';
+import type { ContentType, SubmissionResult } from './submissionInfo.js';
 
 export type Session = { a: string; b: string };
 
@@ -38,11 +39,11 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
     return result;
   }
 
-  const sizeBytes = await fetchImageSize(result.info.imageUrl, cookieHeader);
-  return { type: 'image', info: { ...result.info, sizeBytes } };
+  const { sizeBytes, contentType } = await fetchImageMeta(result.info.imageUrl, cookieHeader);
+  return { type: 'image', info: { ...result.info, sizeBytes, contentType } };
 }
 
-async function fetchImageSize(imageUrl: string, cookieHeader: string): Promise<number> {
+async function fetchImageMeta(imageUrl: string, cookieHeader: string): Promise<{ sizeBytes: number; contentType: ContentType }> {
   console.log(`HEAD ${imageUrl}`);
   const response = await fetch(imageUrl, {
     method: 'HEAD',
@@ -54,10 +55,21 @@ async function fetchImageSize(imageUrl: string, cookieHeader: string): Promise<n
     throw new Error(`content-length header missing from HEAD ${imageUrl}`);
   }
 
-  const size = parseInt(contentLength, 10);
-  if (isNaN(size)) {
+  const sizeBytes = parseInt(contentLength, 10);
+  if (isNaN(sizeBytes)) {
     throw new Error(`Could not parse content-length "${contentLength}" from HEAD ${imageUrl}`);
   }
 
-  return size;
+  const contentType = parseContentType(response.headers.get('content-type'), imageUrl);
+  return { sizeBytes, contentType };
+}
+
+function parseContentType(header: string | null, imageUrl: string): ContentType {
+  const mimeType = header?.split(';')[0].trim();
+  if (mimeType === 'image/jpeg' || mimeType === 'image/png' || mimeType === 'image/gif' || mimeType === 'video/mp4') {
+    return mimeType;
+  }
+  const fallback = guessContentType(imageUrl);
+  if (fallback.isErr()) throw new Error(`Could not determine content type for ${imageUrl}: ${fallback.error}`);
+  return fallback.value;
 }

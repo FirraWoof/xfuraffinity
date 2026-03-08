@@ -1,4 +1,3 @@
-import { guessContentType } from '../furaffinity/imageUrl.js';
 import type { SubmissionInfo } from '../furaffinity/submissionInfo.js';
 import { OpenGraphBuilder } from './openGraphBuilder.js';
 
@@ -10,16 +9,10 @@ export function generateGenericEmbed(info: SubmissionInfo): string {
     .withDescription(info.description)
     .withUrl(info.url);
 
-  const contentTypeResult = guessContentType(info.imageUrl);
-  if (contentTypeResult.isErr()) {
-    throw new Error(contentTypeResult.error);
-  }
-
-  const contentType = contentTypeResult.value;
-  if (contentType === 'video/mp4') {
-    builder.withVideo(info.imageUrl, contentType);
+  if (info.contentType === 'video/mp4') {
+    builder.withVideo(info.imageUrl, info.contentType);
   } else {
-    builder.withImage(info.imageUrl, contentType);
+    builder.withImage(info.imageUrl, info.contentType);
   }
 
   return builder.build();

@@ -1,4 +1,5 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { ensureCacheDir } from './cache.js';
 import { loadConfig } from './config.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
 import { handleSubmission } from './submissionHandler.js';
@@ -12,6 +13,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 const config = loadConfig();
+await ensureCacheDir(config.cacheDir);
 
 const app = Fastify({ logger: true });
 
