@@ -17,5 +17,8 @@
     "dotenv-cli": "^8",
     "tsx": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
   }
 }
