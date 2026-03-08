@@ -6,6 +6,8 @@ pub enum SubmissionInfoResponse {
     FlashSubmission,
     NotFound,
     ServerError,
+    Unauthenticated,
+    Blocked,
 }
 
 #[derive(Debug)]

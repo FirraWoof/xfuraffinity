@@ -1,7 +1,7 @@
 [package]
 name = "xfuraffinity"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -10,9 +10,11 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
+worker = { version = "0.7", features = ['http'] }
+worker-macros = { version = "0.7", features = ['http'] }
+http = "1.3"
 anyhow = "1.0.68"
 cfg-if = "1.0.0"
-worker = "0.0.11"
 scraper = "0.14.0"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by

@@ -2,11 +2,11 @@
 	"private": true,
 	"version": "0.1.0",
 	"scripts": {
-		"deploy:prod": "wrangler publish --env production",
-		"deploy:staging": "wrangler publish --env staging",
-		"dev": "wrangler dev --local --var ALERTING_URL:$ALERTING_URL --var SESSION_A:$SESSION_A --var SESSION_B:$SESSION_B"
+		"deploy:prod": "wrangler deploy --env production",
+		"deploy:staging": "wrangler deploy --env staging",
+		"dev": "wrangler dev"
 	},
 	"devDependencies": {
-		"wrangler": "^2.20.2"
+		"wrangler": "^4.0.0"
 	}
 }

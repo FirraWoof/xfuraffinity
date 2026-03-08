@@ -15,24 +15,18 @@ cfg_if! {
 
 pub fn log_request(req: &Request) {
     console_log!(
-        "{} - [{}], located at: {:?}, within: {}",
+        "{} - [{}], located at: {:?}, within: {:?}",
         Date::now().to_string(),
         req.path(),
-        req.cf().coordinates().unwrap_or_default(),
-        req.cf().region().unwrap_or_else(|| "unknown region".into())
+        req.cf().and_then(|cf| cf.coordinates()),
+        req.cf().and_then(|cf| cf.region())
     );
 }
 
 pub fn get_secret(env: &Env, var: &str) -> String {
-    if env.var("WORKERS_RS_VERSION").is_ok() {
-        env.secret(var)
-            .unwrap_or_else(|_| panic!("Missing required secret {}", var))
-            .to_string()
-    } else {
-        env.var(var)
-            .unwrap_or_else(|_| panic!("Missing required variable {}", var))
-            .to_string()
-    }
+    env.secret(var)
+        .unwrap_or_else(|_| panic!("Missing required secret {}", var))
+        .to_string()
 }
 
 pub fn get_furaffinity_session(env: &Env) -> FurAffinitySession {

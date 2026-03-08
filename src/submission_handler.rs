@@ -1,8 +1,7 @@
 use anyhow::Context;
-use worker::{Request, Response, RouteContext, Url};
+use worker::{console_error, Request, Response, RouteContext, Url};
 
 use crate::alerting::send_alert;
-use crate::embed_generator::default_open_graph::generate_default_opengraph_embed;
 use crate::embed_generator::generic_embed_open_graph::generate_generic_opengraph_embed;
 use crate::embed_generator::message_open_graph::generate_message_opengraph_embed;
 use crate::embed_generator::telegram_embed_open_graph::generate_telegram_opengraph_embed;
@@ -16,12 +15,16 @@ pub async fn handle_submission(
     let result = handle_submission_inner(req, &context).await;
 
     if let Err(e) = &result {
+        console_error!("handle_submission error: {:?}", e);
         send_alert(&context.env, &format!("{:?}", e)).await;
     }
 
     match result {
         Ok(resp) => Ok(resp),
-        Err(_) => Ok(Response::from(generate_default_opengraph_embed())),
+        Err(_) => Ok(Response::from(generate_message_opengraph_embed(
+            "xfuraffinity Error",
+            "An unexpected error occurred. Please report this at github.com/FirraWoof/xfuraffinity",
+        ))),
     }
 }
 
@@ -76,6 +79,17 @@ async fn handle_submission_inner(
         SubmissionInfoResponse::ServerError => generate_message_opengraph_embed(
             "FA Down",
             "FurAffinity responded with a server error, which means it's probably down at the moment, or encountered an error"
+        ),
+        SubmissionInfoResponse::Unauthenticated => {
+            send_alert(&context.env, "FurAffinity credentials are expired or invalid").await;
+            generate_message_opengraph_embed(
+                "Session Expired",
+                "FurAffinity has invalidated xfuraffinity's session, please try again later.",
+            )
+        }
+        SubmissionInfoResponse::Blocked => generate_message_opengraph_embed(
+            "Blocked by FurAffinity",
+            "FurAffinity is blocking automated access",
         ),
     };
 

@@ -5,11 +5,15 @@ use super::html_wrapper::HtmlElement;
 const SUBMISSION_NOT_FOUND_TEXT: &str =
     "The submission you are trying to find is not in our database.";
 const UNAUTHENTICATED_TEXT: &str = "please log in or create an account";
+const CLOUDFLARE_JS_CHALLENGE_SELECTOR: &str = "#challenge-form";
+const CLOUDFLARE_JS_REQUIRED_TEXT: &str = "Enable JavaScript and cookies to continue";
+const CLOUDFLARE_CHECKING_TEXT: &str = "checking your browser";
 
 #[derive(Debug)]
 pub enum SubmissionPageVariant {
     NotFound,
     Unauthenticated,
+    Blocked,
     ImageSubmission,
     FlashSubmission,
 }
@@ -21,6 +25,17 @@ impl<'a> SubmissionPage<'a> {
     }
 
     pub fn get_variant(&self) -> SubmissionPageVariant {
+        if self.0.select(CLOUDFLARE_JS_CHALLENGE_SELECTOR).is_ok() {
+            return SubmissionPageVariant::Blocked;
+        }
+
+        let page_text = self.0.text().to_lowercase();
+        if page_text.contains(&CLOUDFLARE_JS_REQUIRED_TEXT.to_lowercase())
+            || page_text.contains(CLOUDFLARE_CHECKING_TEXT)
+        {
+            return SubmissionPageVariant::Blocked;
+        }
+
         let section_body = self.0.select(".section-body");
         if let Ok(section_body) = section_body {
             if section_body.text().contains(SUBMISSION_NOT_FOUND_TEXT) {
@@ -55,7 +70,7 @@ impl<'a> SubmissionPage<'a> {
 
     pub fn get_view_count(&self) -> Result<usize> {
         self.0
-            .select("#columnpage .views span")?
+            .select("div.views span")?
             .text()
             .parse()
             .with_context(|| "Could not parse view count")
@@ -63,7 +78,7 @@ impl<'a> SubmissionPage<'a> {
 
     pub fn get_comment_count(&self) -> Result<usize> {
         self.0
-            .select("#columnpage .comments span")?
+            .select("section.stats-container div.comments span")?
             .text()
             .parse()
             .with_context(|| "Could not parse comment count")
@@ -71,7 +86,7 @@ impl<'a> SubmissionPage<'a> {
 
     pub fn get_fave_count(&self) -> Result<usize> {
         self.0
-            .select("#columnpage .favorites span")?
+            .select("div.favorites span")?
             .text()
             .parse()
             .with_context(|| "Could not parse fave count")
@@ -80,7 +95,7 @@ impl<'a> SubmissionPage<'a> {
     pub fn get_submission_download_url(&self) -> Result<String> {
         Ok(format!(
             "https:{}",
-            self.0.select("#submissionImg")?.attr("src")?
+            self.0.select("div.download a")?.attr("href")?
         ))
     }
 

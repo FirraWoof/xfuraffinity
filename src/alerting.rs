@@ -1,11 +1,15 @@
-use worker::{console_error, Env, Fetch, Headers, Method, Request, RequestInit};
+use worker::{console_error, console_log, Env, Fetch, Headers, Method, Request, RequestInit};
 
 use crate::utils::get_secret;
 
 pub async fn send_alert(env: &Env, body: &str) {
     let webhook_url = get_secret(env, "ALERTING_URL");
+    if webhook_url == String::new() {
+        console_log!("No alerting url set, muting alerts");
+        return;
+    }
 
-    let mut headers = Headers::new();
+    let headers = Headers::new();
     headers.set("Content-Type", "text/plain").unwrap();
 
     let mut req_ini = RequestInit::new();
