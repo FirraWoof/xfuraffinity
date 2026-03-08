@@ -1,16 +1,19 @@
-export async function sendAlert(alertingUrl: string, message: string): Promise<void> {
+export async function sendAlert(
+  alertingUrl: string,
+  message: string,
+): Promise<void> {
   try {
-    if (!alertingUrl) {
-      console.log('No alerting URL set, muting alert:', message);
+    if (!alertingUrl || alertingUrl.length === 0) {
+      console.log("No alerting URL set, muting alert:", message);
       return;
     }
 
     await fetch(alertingUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
       body: message,
     });
   } catch (err) {
-    console.error('Failed to send alert:', err);
+    console.error("Failed to send alert:", err);
   }
 }
