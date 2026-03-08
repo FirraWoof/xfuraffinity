@@ -1,12 +1,21 @@
 {
-	"private": true,
-	"version": "0.1.0",
-	"scripts": {
-		"deploy:prod": "wrangler deploy --env production",
-		"deploy:staging": "wrangler deploy --env staging",
-		"dev": "wrangler dev"
-	},
-	"devDependencies": {
-		"wrangler": "^4.0.0"
-	}
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "dotenv -e .dev.vars -- tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1",
+    "fastify": "^5",
+    "neverthrow": "^8"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "dotenv-cli": "^8",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
 }
