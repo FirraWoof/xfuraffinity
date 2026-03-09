@@ -61,6 +61,11 @@ export class OpenGraphBuilder {
     return this;
   }
 
+  withOEmbed(href: string): this {
+    this.tags.push(`<link rel="alternate" type="application/json+oembed" href="${href}" />`);
+    return this;
+  }
+
   build(): string {
     const meta = this.tags.join('\n');
     return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

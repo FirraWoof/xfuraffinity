@@ -47,10 +47,13 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   const faveCountText = $('div.favorites span').first().text();
   const downloadHref = $('div.download a').attr('href');
   const thumbnailSrc = $('#submissionImg').attr('data-preview-src');
+  const artistLink = $('.submission-id-sub-container a[href^="/user/"]').first();
+  const artistName = artistLink.text().trim();
+  const artistHref = artistLink.attr('href');
 
-  if (!url || !title || !description || !downloadHref || !thumbnailSrc) {
+  if (!url || !title || !description || !downloadHref || !thumbnailSrc || !artistName || !artistHref) {
     throw new Error(
-      `Failed to parse submission page: missing fields (url=${url}, title=${title}, download=${downloadHref}, thumbnail=${thumbnailSrc})`
+      `Failed to parse submission page: missing fields (url=${url}, title=${title}, download=${downloadHref}, thumbnail=${thumbnailSrc}, artist=${artistName})`
     );
   }
 
@@ -75,6 +78,8 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
       faveCount,
       imageUrl: `https:${downloadHref}`,
       thumbnailUrl: `https:${thumbnailSrc}`,
+      artistName,
+      artistUrl: `https://www.furaffinity.net${artistHref}`,
     },
   };
 }

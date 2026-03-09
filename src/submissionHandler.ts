@@ -46,10 +46,11 @@ export async function handleSubmission(
 
     switch (result.type) {
       case 'image': {
+        const oEmbedUrl = config.publicUrl ? `${config.publicUrl}/oembed?id=${id}` : undefined;
         const html =
           requester === 'telegram'
             ? generateTelegramEmbed(result.info)
-            : generateGenericEmbed(result.info);
+            : generateGenericEmbed(result.info, oEmbedUrl);
         return { type: 'embed', html, meta };
       }
       case 'flash':

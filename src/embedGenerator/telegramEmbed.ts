@@ -2,13 +2,17 @@ import type { SubmissionInfo } from '../furaffinity/submissionInfo.js';
 import { OpenGraphBuilder } from './openGraphBuilder.js';
 
 const FIVE_MB = 1024 * 1024 * 5;
+const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
 
 export function generateTelegramEmbed(info: SubmissionInfo): string {
+  const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
+  const fullDescription = info.description ? `${info.description}\n\n${stats}` : stats;
+
   const builder = new OpenGraphBuilder()
     .withDefaultMetadata()
     .withTwitterCard('summary_large_image')
     .withTitle(info.title)
-    .withDescription(info.description)
+    .withDescription(fullDescription)
     .withUrl(info.url);
 
   const mediaUrl = chooseEmbedUrl(info);

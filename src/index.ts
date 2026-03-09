@@ -1,8 +1,9 @@
 import { createServer } from 'node:http';
 import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
-import { ensureCacheDir } from './cache.js';
+import { ensureCacheDir, getCached, setCached } from './cache.js';
 import { loadConfig } from './config.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
+import { fetchSubmissionInfo } from './furaffinity/client.js';
 import { registry, requestsTotal } from './metrics.js';
 import { handleSubmission } from './submissionHandler.js';
 
@@ -85,6 +86,36 @@ app.get('/view/:id', handleRoute);
 app.get('/view/:id/', handleRoute);
 app.get('/full/:id', handleRoute);
 app.get('/full/:id/', handleRoute);
+
+app.get('/oembed', async (request, reply) => {
+  const { id: idStr } = request.query as { id?: string };
+  const id = parseInt(idStr ?? '', 10);
+
+  if (isNaN(id)) {
+    reply.status(400).send({ error: 'Missing or invalid id parameter' });
+    return;
+  }
+
+  const cached = await getCached(config.cacheDir, id);
+  const result = cached ?? await fetchSubmissionInfo(id, { a: config.sessionA, b: config.sessionB });
+  if (!cached) await setCached(config.cacheDir, id, result);
+
+  if (result.type !== 'image') {
+    reply.status(404).send({ error: 'Submission not found or not an image' });
+    return;
+  }
+
+  reply
+    .type('application/json+oembed')
+    .send({
+      version: '1.0',
+      type: 'photo',
+      author_name: result.info.artistName,
+      author_url: result.info.artistUrl,
+      provider_name: 'FurAffinity',
+      provider_url: 'https://www.furaffinity.net',
+    });
+});
 
 await app.listen({ port: config.port, host: '0.0.0.0' });
 

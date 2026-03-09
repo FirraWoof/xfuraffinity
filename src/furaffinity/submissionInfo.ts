@@ -11,6 +11,8 @@ export type SubmissionInfo = {
   contentType: ContentType;
   sizeBytes: number;
   thumbnailUrl: string;
+  artistName: string;
+  artistUrl: string;
 };
 
 export type SubmissionResult =
