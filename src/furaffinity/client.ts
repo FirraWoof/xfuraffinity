@@ -1,3 +1,4 @@
+import { fafetchDuration } from '../metrics.js';
 import { guessContentType } from './imageUrl.js';
 import { parseSubmissionPage } from './submission.js';
 import type { ContentType, SubmissionResult } from './submissionInfo.js';
@@ -23,10 +24,11 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
   const submissionUrl = `${BASE_URL}/view/${id}`;
   const cookieHeader = `a=${session.a}; b=${session.b}`;
 
-  console.log(`GET ${submissionUrl}`);
+  const endPageTimer = fafetchDuration.startTimer({ request: 'page' });
   const response = await fetch(submissionUrl, {
     headers: { ...BROWSER_HEADERS, Cookie: cookieHeader },
   });
+  endPageTimer();
 
   if (response.status >= 500) {
     return { type: 'serverError' };
@@ -44,11 +46,12 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
 }
 
 async function fetchImageMeta(imageUrl: string, cookieHeader: string): Promise<{ sizeBytes: number; contentType: ContentType }> {
-  console.log(`HEAD ${imageUrl}`);
+  const endImageTimer = fafetchDuration.startTimer({ request: 'image' });
   const response = await fetch(imageUrl, {
     method: 'HEAD',
     headers: { ...BROWSER_HEADERS, Cookie: cookieHeader },
   });
+  endImageTimer();
 
   const contentLength = response.headers.get('content-length');
   if (!contentLength) {

@@ -1,0 +1,71 @@
+// ── Metrics ───────────────────────────────────────────────────────────────────
+
+prometheus.scrape "app" {
+  targets         = [{"__address__" = "app:9464"}]
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.cloud.receiver]
+}
+
+prometheus.remote_write "cloud" {
+  endpoint {
+    url = env("GRAFANA_METRICS_URL")
+    basic_auth {
+      username = env("GRAFANA_METRICS_USER")
+      password = env("GRAFANA_API_KEY")
+    }
+  }
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.containers.targets
+  relabel_rules = discovery.relabel.containers.rules
+  forward_to    = [loki.process.docker_logs.receiver]
+}
+
+loki.process "docker_logs" {
+  forward_to = [loki.write.cloud.receiver]
+
+  stage.match {
+    selector = "{service=\"app\"}"
+
+    stage.json {
+      expressions = { level = "" }
+    }
+
+    stage.labels {
+      values = { level = "" }
+    }
+  }
+}
+
+loki.write "cloud" {
+  endpoint {
+    url = env("GRAFANA_LOGS_URL")
+    basic_auth {
+      username = env("GRAFANA_LOGS_USER")
+      password = env("GRAFANA_API_KEY")
+    }
+  }
+}
