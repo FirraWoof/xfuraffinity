@@ -48,6 +48,7 @@ loki.source.docker "containers" {
   host          = "unix:///var/run/docker.sock"
   targets       = discovery.docker.containers.targets
   relabel_rules = discovery.relabel.containers.rules
+  since         = "24h"
   forward_to    = [loki.process.docker_logs.receiver]
 }
 
