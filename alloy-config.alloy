@@ -48,12 +48,16 @@ loki.source.docker "containers" {
   host          = "unix:///var/run/docker.sock"
   targets       = discovery.docker.containers.targets
   relabel_rules = discovery.relabel.containers.rules
-  since         = "24h"
   forward_to    = [loki.process.docker_logs.receiver]
 }
 
 loki.process "docker_logs" {
   forward_to = [loki.write.cloud.receiver]
+
+  stage.drop {
+    older_than          = "24h"
+    drop_counter_reason = "too_old"
+  }
 
   stage.match {
     selector = "{service=\"app\"}"
