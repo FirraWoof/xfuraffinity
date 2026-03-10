@@ -1,11 +1,11 @@
 export class OpenGraphBuilder {
   private tags: string[] = [];
 
-  withDefaultMetadata(): this {
+  withDefaultMetadata(ogType: string = 'website'): this {
     this.tags.push(`
       <meta charset="utf-8" />
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-      <meta property="og:type" content="website" />
+      <meta property="og:type" content="${ogType}" />
     `);
     return this;
   }
@@ -57,6 +57,15 @@ export class OpenGraphBuilder {
   withTwitterCard(type: 'summary' | 'summary_large_image'): this {
     this.tags.push(`
       <meta name="twitter:card" content="${type}" />
+    `);
+    return this;
+  }
+
+  withAudio(url: string, type: string): this {
+    this.tags.push(`
+      <meta property="og:audio" content="${url}" />
+      <meta property="og:audio:secure_url" content="${url}" />
+      <meta property="og:audio:type" content="${type}" />
     `);
     return this;
   }

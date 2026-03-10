@@ -1,9 +1,10 @@
 import { getCached, setCached } from './cache.js';
 import type { Config } from './config.js';
 import { fetchSubmissionInfo } from './furaffinity/client.js';
-import { generateGenericEmbed } from './embedGenerator/genericEmbed.js';
+import { generateImageEmbed, generateImageTelegramEmbed } from './embedGenerator/imageEmbed.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
-import { generateTelegramEmbed } from './embedGenerator/telegramEmbed.js';
+import { generateMusicEmbed, generateMusicTelegramEmbed } from './embedGenerator/musicEmbed.js';
+import { generateStoryEmbed } from './embedGenerator/storyEmbed.js';
 import { cacheHitsTotal, errorsTotal, fafetchesTotal, submissionDuration, submissionResultsTotal } from './metrics.js';
 import { classifyRequester } from './requester.js';
 
@@ -49,8 +50,20 @@ export async function handleSubmission(
         const oEmbedUrl = config.publicUrl ? `${config.publicUrl}/oembed?id=${id}` : undefined;
         const html =
           requester === 'telegram'
-            ? generateTelegramEmbed(result.info)
-            : generateGenericEmbed(result.info, oEmbedUrl);
+            ? generateImageTelegramEmbed(result.info)
+            : generateImageEmbed(result.info, oEmbedUrl);
+        return { type: 'embed', html, meta };
+      }
+      case 'story': {
+        const oEmbedUrl = config.publicUrl ? `${config.publicUrl}/oembed?id=${id}` : undefined;
+        return { type: 'embed', html: generateStoryEmbed(result.info, oEmbedUrl), meta };
+      }
+      case 'music': {
+        const oEmbedUrl = config.publicUrl ? `${config.publicUrl}/oembed?id=${id}` : undefined;
+        const html =
+          requester === 'telegram'
+            ? generateMusicTelegramEmbed(result.info)
+            : generateMusicEmbed(result.info, oEmbedUrl);
         return { type: 'embed', html, meta };
       }
       case 'flash':

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "dotenv -e .dev.vars -- tsx watch src/index.ts"
+    "dev": "dotenv -e .dev.vars -- tsx watch src/index.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "cheerio": "^1",
@@ -16,8 +17,10 @@
   "devDependencies": {
     "@types/node": "^22",
     "dotenv-cli": "^8",
+    "msw": "^2.12.10",
     "tsx": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -3,7 +3,7 @@ import type { SubmissionResult } from './furaffinity/submissionInfo.js';
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
-const CACHEABLE_TYPES = new Set(['image', 'flash', 'notFound']);
+const CACHEABLE_TYPES = new Set(['image', 'story', 'music', 'flash', 'notFound']);
 
 type CacheEntry = { cachedAt: number; result: SubmissionResult };
 
