@@ -200,7 +200,6 @@ describe('story embeds', () => {
     expect(response.statusCode).toBe(200);
     const body = response.body;
     expect(body).toContain('Test Story');
-    expect(body).toContain('📄 Story');
     expect(body).toContain('Once upon a time');
   });
 });

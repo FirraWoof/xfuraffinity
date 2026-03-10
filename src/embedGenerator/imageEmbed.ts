@@ -6,7 +6,7 @@ const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
 
 export function generateImageEmbed(info: SubmissionInfo, oEmbedUrl?: string): string {
   const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
-  const fullDescription = info.description ? `${info.description}\n\n${stats}` : stats;
+  const fullDescription = info.description ? `${stats}\n\n${info.description}` : stats;
 
   const builder = new OpenGraphBuilder()
     .withDefaultMetadata()
@@ -30,7 +30,7 @@ export function generateImageEmbed(info: SubmissionInfo, oEmbedUrl?: string): st
 
 export function generateImageTelegramEmbed(info: SubmissionInfo): string {
   const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
-  const fullDescription = info.description ? `${info.description}\n\n${stats}` : stats;
+  const fullDescription = info.description ? `${stats}\n\n${info.description}` : stats;
 
   const builder = new OpenGraphBuilder()
     .withDefaultMetadata()

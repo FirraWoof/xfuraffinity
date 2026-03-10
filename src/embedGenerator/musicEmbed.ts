@@ -5,10 +5,10 @@ const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
 
 export function generateMusicEmbed(info: MusicInfo, oEmbedUrl?: string): string {
   const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
-  const fullDescription = info.description ? `🎵 Music\n\n${info.description}\n\n${stats}` : `🎵 Music\n\n${stats}`;
+  const fullDescription = info.description ? `${stats}\n\n${info.description}` : stats;
 
   const builder = new OpenGraphBuilder()
-    .withDefaultMetadata('music.song')
+    .withDefaultMetadata()
     .withTwitterCard('summary_large_image')
     .withTitle(info.title)
     .withDescription(fullDescription)
@@ -25,7 +25,7 @@ export function generateMusicEmbed(info: MusicInfo, oEmbedUrl?: string): string 
 
 export function generateMusicTelegramEmbed(info: MusicInfo): string {
   const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
-  const fullDescription = info.description ? `🎵 Music\n\n${info.description}\n\n${stats}` : `🎵 Music\n\n${stats}`;
+  const fullDescription = info.description ? `${stats}\n\n${info.description}` : stats;
 
   return new OpenGraphBuilder()
     .withDefaultMetadata()
