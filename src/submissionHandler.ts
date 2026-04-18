@@ -5,7 +5,7 @@ import { generateImageEmbed, generateImageTelegramEmbed } from './embedGenerator
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
 import { generateMusicEmbed, generateMusicTelegramEmbed } from './embedGenerator/musicEmbed.js';
 import { generateStoryEmbed } from './embedGenerator/storyEmbed.js';
-import { cacheHitsTotal, errorsTotal, fafetchesTotal, submissionDuration, submissionResultsTotal } from './metrics.js';
+import { noticeError } from './metrics.js';
 import { classifyRequester } from './requester.js';
 
 export type RequestMeta = {
@@ -31,17 +31,9 @@ export async function handleSubmission(
   }
 
   try {
-    const endTimer = submissionDuration.startTimer();
     const cached = await getCached(config.cacheDir, id);
-    if (cached) {
-      cacheHitsTotal.inc();
-    } else {
-      fafetchesTotal.inc();
-    }
     const result = cached ?? await fetchSubmissionInfo(id, { a: config.sessionA, b: config.sessionB });
     if (!cached) await setCached(config.cacheDir, id, result);
-    submissionResultsTotal.inc({ result: result.type });
-    endTimer({ cached: String(cached !== null) });
 
     const meta: RequestMeta = { requester, cached: cached !== null, submissionResult: result.type };
 
@@ -78,7 +70,7 @@ export async function handleSubmission(
         return { type: 'embed', html: generateMessageEmbed('Blocked by FurAffinity', 'FurAffinity is blocking automated access'), meta };
     }
   } catch (err) {
-    errorsTotal.inc();
+    noticeError(err);
     return {
       type: 'embed',
       html: generateMessageEmbed('xfuraffinity Error', 'An unexpected error occurred. Please report this at github.com/FirraWoof/xfuraffinity'),

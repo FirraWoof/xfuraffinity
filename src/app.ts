@@ -3,7 +3,7 @@ import { getCached, setCached } from './cache.js';
 import type { Config } from './config.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
 import { fetchSubmissionInfo } from './furaffinity/client.js';
-import { requestsTotal } from './metrics.js';
+import { noticeError, recordSubmissionEvent } from './metrics.js';
 import { handleSubmission } from './submissionHandler.js';
 
 export function buildApp(config: Config): FastifyInstance {
@@ -42,26 +42,27 @@ export function buildApp(config: Config): FastifyInstance {
 
     const result = await handleSubmission(id, userAgent, config);
 
-    requestsTotal.inc({ requester: result.meta.requester, country });
-
-    const logContext = {
+    const event = {
       submissionId: id,
       url: req.url,
       requester: result.meta.requester,
       country,
-      cached: result.meta.cached,
-      submissionResult: result.meta.submissionResult,
+      cached: result.meta.cached ?? false,
+      submissionResult: result.meta.submissionResult ?? 'unknown',
       durationMs: Date.now() - start,
     };
 
+    recordSubmissionEvent(event);
+
     if (result.meta.error) {
-      app.log.error({ ...logContext, err: result.meta.error }, 'request');
+      noticeError(result.meta.error);
+      app.log.error({ ...event, err: result.meta.error }, 'request');
     } else if (result.meta.submissionResult === 'unauthenticated' || result.meta.submissionResult === 'blocked') {
-      app.log.error(logContext, 'request');
+      app.log.error(event, 'request');
     } else if (result.meta.submissionResult === 'serverError') {
-      app.log.warn(logContext, 'request');
+      app.log.warn(event, 'request');
     } else {
-      app.log.info(logContext, 'request');
+      app.log.info(event, 'request');
     }
 
     if (result.type === 'redirect') {

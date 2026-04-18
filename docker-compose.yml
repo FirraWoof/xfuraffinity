@@ -7,25 +7,10 @@ services:
       - fa_cache:/cache
     environment:
       CACHE_DIR: /cache
-      METRICS_PORT: 9464
 
   cloudflared:
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-    depends_on:
-      - app
-    restart: unless-stopped
-
-  alloy:
-    build:
-      context: .
-      dockerfile: Dockerfile.alloy
-    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
-    ports:
-      - '127.0.0.1:12345:12345'
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    env_file: .dev.vars
     depends_on:
       - app
     restart: unless-stopped

@@ -2,7 +2,6 @@ export type Config = {
   sessionA: string;
   sessionB: string;
   port: number;
-  metricsPort: number;
   cacheDir: string;
   publicUrl: string;
 };
@@ -20,7 +19,6 @@ export function loadConfig(): Config {
     sessionA,
     sessionB,
     port: parseInt(process.env.PORT ?? "3000", 10),
-    metricsPort: parseInt(process.env.METRICS_PORT ?? "9464", 10),
     cacheDir: process.env.CACHE_DIR ?? "./cache",
     publicUrl: process.env.PUBLIC_URL ?? '',
   };

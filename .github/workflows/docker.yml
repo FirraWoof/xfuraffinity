@@ -55,12 +55,3 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.IMAGE }}:latest
-
-      - name: Build and push alloy
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.alloy
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ env.IMAGE }}-alloy:latest
