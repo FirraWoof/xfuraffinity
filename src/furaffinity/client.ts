@@ -28,7 +28,15 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
   });
 
   if (response.status >= 500) {
-    return { type: 'serverError' };
+    return {
+      type: 'serverError',
+      detail: {
+        status: response.status,
+        statusText: response.statusText,
+        cfRay: response.headers.get('cf-ray'),
+        bodySnippet: await readBodySnippet(response),
+      },
+    };
   }
 
   const html = await response.text();
@@ -117,6 +125,15 @@ async function fetchAudioMeta(audioUrl: string): Promise<{ audioContentType: Aud
   }
 
   return { audioContentType: mimeType, audioSizeBytes };
+}
+
+async function readBodySnippet(response: Response, maxLen = 500): Promise<string> {
+  try {
+    const text = await response.text();
+    return text.slice(0, maxLen).replace(/\s+/g, ' ').trim();
+  } catch {
+    return '<failed to read body>';
+  }
 }
 
 function isAudioContentType(mimeType: string | undefined): mimeType is AudioContentType {

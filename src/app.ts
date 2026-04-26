@@ -50,6 +50,12 @@ export function buildApp(config: Config): FastifyInstance {
       cached: result.meta.cached ?? false,
       submissionResult: result.meta.submissionResult ?? 'unknown',
       durationMs: Date.now() - start,
+      ...(result.meta.serverError && {
+        upstreamStatus: result.meta.serverError.status,
+        upstreamStatusText: result.meta.serverError.statusText,
+        upstreamCfRay: result.meta.serverError.cfRay,
+        upstreamBody: result.meta.serverError.bodySnippet,
+      }),
     };
 
     recordSubmissionEvent(event);

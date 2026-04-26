@@ -45,12 +45,19 @@ export type MusicInfo = {
   audioSizeBytes: number;
 };
 
+export type ServerErrorDetail = {
+  status: number;
+  statusText: string;
+  cfRay: string | null;
+  bodySnippet: string;
+};
+
 export type SubmissionResult =
   | { type: 'image'; info: SubmissionInfo }
   | { type: 'story'; info: StoryInfo }
   | { type: 'music'; info: MusicInfo }
   | { type: 'flash' }
   | { type: 'notFound' }
-  | { type: 'serverError' }
+  | { type: 'serverError'; detail: ServerErrorDetail }
   | { type: 'unauthenticated' }
   | { type: 'blocked' };

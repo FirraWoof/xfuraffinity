@@ -1,6 +1,7 @@
 import { getCached, setCached } from './cache.js';
 import type { Config } from './config.js';
 import { fetchSubmissionInfo } from './furaffinity/client.js';
+import type { ServerErrorDetail } from './furaffinity/submissionInfo.js';
 import { generateImageEmbed, generateImageTelegramEmbed } from './embedGenerator/imageEmbed.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
 import { generateMusicEmbed, generateMusicTelegramEmbed } from './embedGenerator/musicEmbed.js';
@@ -12,6 +13,7 @@ export type RequestMeta = {
   requester: 'human' | 'telegram' | 'otherBot';
   cached: boolean | null;
   submissionResult: string | null;
+  serverError?: ServerErrorDetail;
   error?: unknown;
 };
 
@@ -63,7 +65,11 @@ export async function handleSubmission(
       case 'notFound':
         return { type: 'embed', html: generateMessageEmbed('Not Found', `The submission ${id} was not found on FurAffinity`), meta };
       case 'serverError':
-        return { type: 'embed', html: generateMessageEmbed('FA Down', 'FurAffinity responded with a server error, which means it\'s probably down at the moment, or encountered an error'), meta };
+        return {
+          type: 'embed',
+          html: generateMessageEmbed('FA Down', 'FurAffinity responded with a server error, which means it\'s probably down at the moment, or encountered an error'),
+          meta: { ...meta, serverError: result.detail },
+        };
       case 'unauthenticated':
         return { type: 'embed', html: generateMessageEmbed('Session Expired', "FurAffinity has invalidated xfuraffinity's session, please try again later."), meta };
       case 'blocked':
