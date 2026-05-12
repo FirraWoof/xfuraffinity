@@ -23,6 +23,10 @@ const notFoundHtml = fixture('not-found.html');
 const unauthenticatedHtml = fixture('unauthenticated.html');
 const loginRequiredHtml = fixture('login-required.html');
 const imageNewLayoutHtml = fixture('image-new-layout.html');
+const storyNewLayoutHtml = fixture('story-new-layout.html');
+const musicNewLayoutHtml = fixture('music-new-layout.html');
+const imageEmptyDescHtml = fixture('image-empty-desc.html');
+const imageNoContentLengthHtml = fixture('image-no-content-length.html');
 const blockedHtml = fixture('blocked.html');
 
 const DISCORD_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
@@ -42,6 +46,10 @@ const defaultHandlers = [
   http.get('https://www.furaffinity.net/view/130', () => HttpResponse.text(unauthenticatedHtml)),
   http.get('https://www.furaffinity.net/view/133', () => HttpResponse.text(loginRequiredHtml)),
   http.get('https://www.furaffinity.net/view/134', () => HttpResponse.text(imageNewLayoutHtml)),
+  http.get('https://www.furaffinity.net/view/135', () => HttpResponse.text(storyNewLayoutHtml)),
+  http.get('https://www.furaffinity.net/view/136', () => HttpResponse.text(musicNewLayoutHtml)),
+  http.get('https://www.furaffinity.net/view/137', () => HttpResponse.text(imageNoContentLengthHtml)),
+  http.get('https://www.furaffinity.net/view/138', () => HttpResponse.text(imageEmptyDescHtml)),
   http.get('https://www.furaffinity.net/view/131', () => HttpResponse.text(blockedHtml)),
   http.get('https://www.furaffinity.net/view/132', () => new HttpResponse(null, { status: 500 })),
 
@@ -58,14 +66,26 @@ const defaultHandlers = [
   http.head('https://d.furaffinity.net/art/testartist/134/test.jpg', () =>
     new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } })
   ),
+  http.head('https://d.furaffinity.net/art/testartist/137/test.jpg', () =>
+    new HttpResponse(null, { headers: { 'content-type': 'image/jpeg' } })
+  ),
+  http.head('https://d.furaffinity.net/art/testartist/138/test.jpg', () =>
+    new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } })
+  ),
 
   // Story text fetch
   http.get('https://d.furaffinity.net/art/testartist/126/story.txt', () =>
     HttpResponse.text('Once upon a time in a land far away there lived a brave adventurer.')
   ),
+  http.get('https://d.furaffinity.net/art/testartist/135/story.txt', () =>
+    HttpResponse.text('A new layout story excerpt.')
+  ),
 
-  // Audio HEAD request
+  // Audio HEAD requests
   http.head('https://d.furaffinity.net/art/testartist/127/song.mp3', () =>
+    new HttpResponse(null, { headers: { 'content-length': '5000000', 'content-type': 'audio/mpeg' } })
+  ),
+  http.head('https://d.furaffinity.net/art/testartist/136/song.mp3', () =>
     new HttpResponse(null, { headers: { 'content-length': '5000000', 'content-type': 'audio/mpeg' } })
   ),
 ];
@@ -180,6 +200,13 @@ describe('image embeds', () => {
     expect(body).toContain('56');
     expect(body).toContain('789');
   });
+
+  it('renders embed when og:description is empty', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/138', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('Test Image Empty Desc');
+    expect(response.body).toContain('og:image');
+  });
 });
 
 describe('telegram image embeds', () => {
@@ -197,9 +224,15 @@ describe('telegram image embeds', () => {
     const response = await app.inject({ method: 'GET', url: '/view/125', headers: { 'user-agent': TELEGRAM_UA } });
     expect(response.statusCode).toBe(200);
     const body = response.body;
-    // Should use thumbnail URL, not the full image URL
     expect(body).toContain('t.furaffinity.net/125@400-thumb.jpg');
     expect(body).not.toContain('d.furaffinity.net/art/testartist/125/large.jpg');
+  });
+
+  it('falls back to thumbnail when content-length header is missing', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/137', headers: { 'user-agent': TELEGRAM_UA } });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('t.furaffinity.net/137@400-thumb.jpg');
+    expect(response.body).not.toContain('d.furaffinity.net/art/testartist/137/test.jpg');
   });
 
   it('uses video/mp4 for GIF on Telegram', async () => {
@@ -220,6 +253,14 @@ describe('story embeds', () => {
     expect(body).toContain('Test Story');
     expect(body).toContain('Once upon a time');
   });
+
+  it('parses story correctly with new FA layout', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/135', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    expect(body).toContain('Test Story New Layout');
+    expect(body).toContain('A new layout story excerpt.');
+  });
 });
 
 describe('music embeds', () => {
@@ -239,6 +280,15 @@ describe('music embeds', () => {
     const body = response.body;
     expect(body).toContain('Test Music');
     expect(body).not.toContain('og:audio');
+  });
+
+  it('parses music correctly with new FA layout', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/136', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    expect(body).toContain('Test Music New Layout');
+    expect(body).toContain('og:audio');
+    expect(body).toContain('d.furaffinity.net/art/testartist/136/song.mp3');
   });
 });
 

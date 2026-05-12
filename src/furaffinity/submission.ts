@@ -35,7 +35,7 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
 
   // Check for login required page (expired/invalid session)
   const pageTitle = $('title').text().toLowerCase();
-  if (pageTitle.includes(LOGIN_REQUIRED_TITLE)) {
+  if (pageTitle.startsWith(LOGIN_REQUIRED_TITLE)) {
     return { type: 'unauthenticated' };
   }
 
@@ -61,15 +61,14 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   const faveCountText = $('.submission-page-stats div[title="Favorites"] div').first().text().trim()
     || $('div.favorites span').first().text();
   const thumbnailSrc = $('#submissionImg').attr('data-preview-src');
-  const artistLink = $('.submission-description-artist .c-usernameBlockSimple a[href^="/user/"]').first().length
-    ? $('.submission-description-artist .c-usernameBlockSimple a[href^="/user/"]').first()
-    : $('.submission-id-sub-container a[href^="/user/"]').first(); // fallback old layout
+  const newArtistLink = $('.submission-description-artist .c-usernameBlockSimple a[href^="/user/"]').first();
+  const artistLink = newArtistLink.length ? newArtistLink : $('.submission-id-sub-container a[href^="/user/"]').first(); // fallback old layout
   const artistName = artistLink.text().trim();
   const artistHref = artistLink.attr('href');
 
   if (!url || !title || description === undefined || !thumbnailSrc || !artistName || !artistHref) {
     throw new Error(
-      `Failed to parse submission page: missing fields (url=${url}, title=${title}, thumbnail=${thumbnailSrc}, artist=${artistName})`
+      `Failed to parse submission page: missing fields (url=${url}, title=${title}, description=${description}, thumbnail=${thumbnailSrc}, artist=${artistName})`
     );
   }
 
