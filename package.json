@@ -25,7 +25,12 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "@datadog/pprof",
+      "@newrelic/fn-inspect",
+      "@newrelic/native-metrics",
+      "esbuild",
+      "msw",
+      "protobufjs"
     ]
   }
 }
