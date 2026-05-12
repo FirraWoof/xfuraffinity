@@ -1,3 +1,7 @@
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export class OpenGraphBuilder {
   private tags: string[] = [];
 
@@ -11,17 +15,19 @@ export class OpenGraphBuilder {
   }
 
   withTitle(title: string): this {
+    const t = escapeHtml(title);
     this.tags.push(`
-      <meta property="og:title" content="${title}" />
-      <meta name="twitter:title" content="${title}" />
+      <meta property="og:title" content="${t}" />
+      <meta name="twitter:title" content="${t}" />
     `);
     return this;
   }
 
   withDescription(desc: string): this {
+    const d = escapeHtml(desc);
     this.tags.push(`
-      <meta property="og:description" content="${desc}" />
-      <meta name="twitter:description" content="${desc}" />
+      <meta property="og:description" content="${d}" />
+      <meta name="twitter:description" content="${d}" />
     `);
     return this;
   }
