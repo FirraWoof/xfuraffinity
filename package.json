@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node -r newrelic dist/index.js",
-    "dev": "dotenv -e .dev.vars -- tsx watch src/index.ts",
+    "dev": "dotenv -- tsx watch src/index.ts",
     "test": "vitest run"
   },
   "dependencies": {
