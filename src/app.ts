@@ -4,7 +4,26 @@ import type { Config } from './config.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
 import { fetchSubmissionInfo } from './furaffinity/client.js';
 import { noticeError, recordSubmissionEvent } from './metrics.js';
+import { identifyService } from './requester.js';
 import { handleSubmission } from './submissionHandler.js';
+
+function cacheControl(submissionResult: string | null): string {
+  switch (submissionResult) {
+    case 'image':
+    case 'story':
+    case 'music':
+    case 'flash':
+    case 'notFound':
+      return 'public, max-age=86400';
+    case 'serverError':
+    case 'unauthenticated':
+    case 'blocked':
+      return 'public, max-age=60';
+    default:
+      // Unexpected errors — don't let anything cache these
+      return 'no-store';
+  }
+}
 
 export function buildApp(config: Config): FastifyInstance {
   const app = Fastify({
@@ -13,6 +32,7 @@ export function buildApp(config: Config): FastifyInstance {
   });
 
   app.setErrorHandler((error, _req, reply) => {
+    noticeError(error);
     app.log.error({ err: error }, 'unhandled fastify error');
     reply
       .type('text/html; charset=utf-8')
@@ -46,14 +66,16 @@ export function buildApp(config: Config): FastifyInstance {
       submissionId: id,
       url: req.url,
       requester: result.meta.requester,
+      service: identifyService(userAgent),
+      userAgent,
       country,
       cached: result.meta.cached ?? false,
-      submissionResult: result.meta.submissionResult ?? 'unknown',
+      submissionResult: result.meta.submissionResult,
       durationMs: Date.now() - start,
       ...(result.meta.serverError && {
         upstreamStatus: result.meta.serverError.status,
         upstreamStatusText: result.meta.serverError.statusText,
-        upstreamCfRay: result.meta.serverError.cfRay,
+        upstreamCfRay: result.meta.serverError.cfRay ?? undefined,
         upstreamBody: result.meta.serverError.bodySnippet,
       }),
     };
@@ -64,6 +86,7 @@ export function buildApp(config: Config): FastifyInstance {
       noticeError(result.meta.error);
       app.log.error({ ...event, err: result.meta.error }, 'request');
     } else if (result.meta.submissionResult === 'unauthenticated' || result.meta.submissionResult === 'blocked') {
+      noticeError(new Error(`FA ${result.meta.submissionResult} for submission ${id}`));
       app.log.error(event, 'request');
     } else if (result.meta.submissionResult === 'serverError') {
       app.log.warn(event, 'request');
@@ -74,7 +97,7 @@ export function buildApp(config: Config): FastifyInstance {
     if (result.type === 'redirect') {
       reply.redirect(result.url);
     } else {
-      reply.type('text/html; charset=utf-8').send(result.html);
+      reply.type('text/html; charset=utf-8').header('cache-control', cacheControl(result.meta.submissionResult)).send(result.html);
     }
   }
 

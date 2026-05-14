@@ -13,7 +13,7 @@ export type SubmissionEvent = {
   // FA server error details, present when submissionResult === 'serverError'
   upstreamStatus?: number;
   upstreamStatusText?: string;
-  upstreamCfRay?: string | null;
+  upstreamCfRay?: string;
   upstreamBody?: string;
 };
 

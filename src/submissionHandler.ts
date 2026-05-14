@@ -12,7 +12,7 @@ import { classifyRequester } from './requester.js';
 export type RequestMeta = {
   requester: 'human' | 'telegram' | 'otherBot';
   cached: boolean | null;
-  submissionResult: string | null;
+  submissionResult: string;
   serverError?: ServerErrorDetail;
   error?: unknown;
 };
