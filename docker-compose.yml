@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    env_file: .dev.vars
+    env_file: .env
     restart: unless-stopped
     volumes:
       - fa_cache:/cache
