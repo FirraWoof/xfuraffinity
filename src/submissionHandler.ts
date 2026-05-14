@@ -29,7 +29,7 @@ export async function handleSubmission(
   const requester = classifyRequester(userAgent);
 
   if (requester === 'human') {
-    return { type: 'redirect', url: `https://www.furaffinity.net/view/${id}`, meta: { requester, cached: null, submissionResult: null } };
+    return { type: 'redirect', url: `https://www.furaffinity.net/view/${id}`, meta: { requester, cached: null, submissionResult: 'redirect' } };
   }
 
   try {
@@ -80,7 +80,7 @@ export async function handleSubmission(
     return {
       type: 'embed',
       html: generateMessageEmbed('xfuraffinity Error', 'An unexpected error occurred. Please report this at github.com/FirraWoof/xfuraffinity'),
-      meta: { requester, cached: null, submissionResult: null, error: err },
+      meta: { requester, cached: null, submissionResult: 'error', error: err },
     };
   }
 }
