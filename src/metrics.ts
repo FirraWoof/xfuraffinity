@@ -2,11 +2,19 @@ import newrelic from 'newrelic';
 
 export type SubmissionEvent = {
   submissionId: number;
+  url: string;
   requester: string;
+  service: string;
+  userAgent: string;
   country: string;
   cached: boolean;
   submissionResult: string;
   durationMs: number;
+  // FA server error details, present when submissionResult === 'serverError'
+  upstreamStatus?: number;
+  upstreamStatusText?: string;
+  upstreamCfRay?: string | null;
+  upstreamBody?: string;
 };
 
 export function recordSubmissionEvent(event: SubmissionEvent) {
