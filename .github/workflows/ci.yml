@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Lint and format check
+        run: pnpm exec biome ci src
+
       - name: Type check
         run: pnpm exec tsc --noEmit
 
