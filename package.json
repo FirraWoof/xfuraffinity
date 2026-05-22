@@ -10,7 +10,7 @@
     "test": "vitest run",
     "lint": "biome check src",
     "format": "biome format --write src",
-    "prepare": "simple-git-hooks"
+    "prepare": "command -v simple-git-hooks >/dev/null 2>&1 && simple-git-hooks || true"
   },
   "dependencies": {
     "cheerio": "^1",
