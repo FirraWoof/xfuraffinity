@@ -11,15 +11,15 @@ export function loadConfig(): Config {
   const sessionB = process.env.SESSION_B;
 
   if (!sessionA || !sessionB) {
-    console.error("Missing required env vars: SESSION_A and SESSION_B must be set");
+    console.error('Missing required env vars: SESSION_A and SESSION_B must be set');
     process.exit(1);
   }
 
   return {
     sessionA,
     sessionB,
-    port: parseInt(process.env.PORT ?? "3000", 10),
-    cacheDir: process.env.CACHE_DIR ?? "./cache",
+    port: parseInt(process.env.PORT ?? '3000', 10),
+    cacheDir: process.env.CACHE_DIR ?? './cache',
     publicUrl: process.env.PUBLIC_URL ?? '',
   };
 }

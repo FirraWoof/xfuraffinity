@@ -59,12 +59,14 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   const url = $('meta[property*="og:url"]').attr('content');
   const title = $('meta[property*="og:title"]').attr('content');
   const description = $('meta[property*="og:description"]').attr('content');
-  const viewCountText = $('.submission-page-stats div[title="Views"] div').first().text().trim()
-    || $('div.views span').first().text(); // fallback old layout
-  const commentCountText = $('.submission-page-stats div[title="Comments"] div').first().text().trim()
-    || $('section.stats-container div.comments span').first().text();
-  const faveCountText = $('.submission-page-stats div[title="Favorites"] div').first().text().trim()
-    || $('div.favorites span').first().text();
+  const viewCountText =
+    $('.submission-page-stats div[title="Views"] div').first().text().trim() || $('div.views span').first().text(); // fallback old layout
+  const commentCountText =
+    $('.submission-page-stats div[title="Comments"] div').first().text().trim() ||
+    $('section.stats-container div.comments span').first().text();
+  const faveCountText =
+    $('.submission-page-stats div[title="Favorites"] div').first().text().trim() ||
+    $('div.favorites span').first().text();
   const thumbnailSrc = $('#submissionImg').attr('data-preview-src');
   const newArtistLink = $('.submission-description-artist .c-usernameBlockSimple a[href^="/user/"]').first();
   const artistLink = newArtistLink.length ? newArtistLink : $('.submission-id-sub-container a[href^="/user/"]').first(); // fallback old layout
@@ -73,7 +75,7 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
 
   if (!url || !title || description === undefined || !thumbnailSrc || !artistName || !artistHref) {
     throw new Error(
-      `Failed to parse submission page: missing fields (url=${url}, title=${title}, description=${description}, thumbnail=${thumbnailSrc}, artist=${artistName})`
+      `Failed to parse submission page: missing fields (url=${url}, title=${title}, description=${description}, thumbnail=${thumbnailSrc}, artist=${artistName})`,
     );
   }
 
@@ -81,9 +83,9 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   const commentCount = parseInt(commentCountText, 10);
   const faveCount = parseInt(faveCountText, 10);
 
-  if (isNaN(viewCount) || isNaN(commentCount) || isNaN(faveCount)) {
+  if (Number.isNaN(viewCount) || Number.isNaN(commentCount) || Number.isNaN(faveCount)) {
     throw new Error(
-      `Failed to parse submission counts (views="${viewCountText}", comments="${commentCountText}", faves="${faveCountText}")`
+      `Failed to parse submission counts (views="${viewCountText}", comments="${commentCountText}", faves="${faveCountText}")`,
     );
   }
 
@@ -120,8 +122,8 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   }
 
   // New FA layout: Download button in #submission-options
-  const downloadHref = $('#submission-options a[href^="//d.furaffinity.net"]').attr('href')
-    || $('div.download a').attr('href'); // fallback old layout
+  const downloadHref =
+    $('#submission-options a[href^="//d.furaffinity.net"]').attr('href') || $('div.download a').attr('href'); // fallback old layout
   if (!downloadHref) {
     throw new Error(`Failed to parse submission page: missing download href (url=${url})`);
   }
