@@ -11,6 +11,13 @@ fi
 
 url="$1"
 
+if [[ -f .env ]]; then
+  set -a
+  # shellcheck source=.env
+  source .env
+  set +a
+fi
+
 if [[ -z "${SESSION_A:-}" || -z "${SESSION_B:-}" ]]; then
   echo "Error: SESSION_A and SESSION_B environment variables must be set."
   exit 1
