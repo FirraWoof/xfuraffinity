@@ -13,11 +13,13 @@ export type SubmissionPageResult =
   | { type: 'flash' }
   | { type: 'notFound' }
   | { type: 'unauthenticated' }
+  | { type: 'accountDisabled' }
   | { type: 'blocked' };
 
 const SUBMISSION_NOT_FOUND_TEXT = 'not in our database';
 const UNAUTHENTICATED_TEXT = 'please log in';
 const LOGIN_REQUIRED_TITLE = 'login required';
+const ACCOUNT_DISABLED_TITLE = 'account disabled';
 const CLOUDFLARE_JS_REQUIRED_TEXT = 'enable javascript and cookies to continue';
 const CLOUDFLARE_CHECKING_TEXT = 'checking your browser';
 
@@ -37,6 +39,9 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   const pageTitle = $('title').text().toLowerCase();
   if (pageTitle.startsWith(LOGIN_REQUIRED_TITLE)) {
     return { type: 'unauthenticated' };
+  }
+  if (pageTitle.startsWith(ACCOUNT_DISABLED_TITLE)) {
+    return { type: 'accountDisabled' };
   }
 
   const sectionBodyText = $('.section-body').text();

@@ -7,3 +7,5 @@
 
 sample-files/
 cache/
+
+*.log
