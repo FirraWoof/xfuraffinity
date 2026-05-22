@@ -36,23 +36,25 @@ export function buildApp(config: Config): FastifyInstance {
     app.log.error({ err: error }, 'unhandled fastify error');
     reply
       .type('text/html; charset=utf-8')
-      .send(generateMessageEmbed('Error', 'An unexpected error occurred. Please report this at github.com/FirraWoof/xfuraffinity'));
+      .send(
+        generateMessageEmbed(
+          'Error',
+          'An unexpected error occurred. Please report this at github.com/FirraWoof/xfuraffinity',
+        ),
+      );
   });
 
   app.get('/', (_req, reply) => {
     reply.redirect('https://firrawoof.github.io/xfuraffinity/');
   });
 
-  async function handleRoute(
-    req: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
-  ) {
+  async function handleRoute(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const start = Date.now();
     const id = parseInt(req.params.id, 10);
     const country = (req.headers['cf-ipcountry'] as string | undefined) ?? 'unknown';
     const userAgent = req.headers['user-agent'] ?? '';
 
-    if (isNaN(id)) {
+    if (Number.isNaN(id)) {
       app.log.warn({ url: req.url, country, userAgent }, 'invalid submission id');
       reply
         .type('text/html; charset=utf-8')
@@ -97,7 +99,10 @@ export function buildApp(config: Config): FastifyInstance {
     if (result.type === 'redirect') {
       reply.redirect(result.url);
     } else {
-      reply.type('text/html; charset=utf-8').header('cache-control', cacheControl(result.meta.submissionResult)).send(result.html);
+      reply
+        .type('text/html; charset=utf-8')
+        .header('cache-control', cacheControl(result.meta.submissionResult))
+        .send(result.html);
     }
   }
 
@@ -110,13 +115,13 @@ export function buildApp(config: Config): FastifyInstance {
     const { id: idStr } = request.query as { id?: string };
     const id = parseInt(idStr ?? '', 10);
 
-    if (isNaN(id)) {
+    if (Number.isNaN(id)) {
       reply.status(400).send({ error: 'Missing or invalid id parameter' });
       return;
     }
 
     const cached = await getCached(config.cacheDir, id);
-    const result = cached ?? await fetchSubmissionInfo(id, { a: config.sessionA, b: config.sessionB });
+    const result = cached ?? (await fetchSubmissionInfo(id, { a: config.sessionA, b: config.sessionB }));
     if (!cached) await setCached(config.cacheDir, id, result);
 
     if (result.type !== 'image' && result.type !== 'story' && result.type !== 'music') {
@@ -124,16 +129,14 @@ export function buildApp(config: Config): FastifyInstance {
       return;
     }
 
-    reply
-      .type('application/json+oembed')
-      .send({
-        version: '1.0',
-        type: result.type === 'image' ? 'photo' : 'link',
-        author_name: result.info.artistName,
-        author_url: result.info.artistUrl,
-        provider_name: 'FurAffinity',
-        provider_url: 'https://www.furaffinity.net',
-      });
+    reply.type('application/json+oembed').send({
+      version: '1.0',
+      type: result.type === 'image' ? 'photo' : 'link',
+      author_name: result.info.artistName,
+      author_url: result.info.artistUrl,
+      provider_name: 'FurAffinity',
+      provider_url: 'https://www.furaffinity.net',
+    });
   });
 
   return app;

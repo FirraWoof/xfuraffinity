@@ -1,4 +1,4 @@
-import { Result, ok, err } from 'neverthrow';
+import { err, ok, type Result } from 'neverthrow';
 import type { ContentType } from './submissionInfo.js';
 
 export function guessContentType(url: string): Result<ContentType, string> {

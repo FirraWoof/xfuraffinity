@@ -60,4 +60,5 @@ export type SubmissionResult =
   | { type: 'notFound' }
   | { type: 'serverError'; detail: ServerErrorDetail }
   | { type: 'unauthenticated' }
+  | { type: 'accountDisabled' }
   | { type: 'blocked' };

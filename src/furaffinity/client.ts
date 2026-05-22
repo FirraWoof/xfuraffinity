@@ -9,8 +9,7 @@ const BASE_URL = 'https://www.furaffinity.net';
 const BROWSER_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-  Accept:
-    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
   'Sec-Fetch-Dest': 'document',
   'Sec-Fetch-Mode': 'navigate',
@@ -60,7 +59,10 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
   return result;
 }
 
-async function fetchImageMeta(imageUrl: string, cookieHeader: string): Promise<{ sizeBytes: number | null; contentType: ContentType }> {
+async function fetchImageMeta(
+  imageUrl: string,
+  cookieHeader: string,
+): Promise<{ sizeBytes: number | null; contentType: ContentType }> {
   const response = await fetch(imageUrl, {
     method: 'HEAD',
     headers: { ...BROWSER_HEADERS, Cookie: cookieHeader },
@@ -68,7 +70,7 @@ async function fetchImageMeta(imageUrl: string, cookieHeader: string): Promise<{
 
   const contentLength = response.headers.get('content-length');
   const parsed = contentLength ? parseInt(contentLength, 10) : NaN;
-  const sizeBytes = isNaN(parsed) ? null : parsed;
+  const sizeBytes = Number.isNaN(parsed) ? null : parsed;
 
   const contentType = parseContentType(response.headers.get('content-type'), imageUrl);
   return { sizeBytes, contentType };
@@ -97,10 +99,12 @@ function trimToWordBoundary(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   const trimmed = text.slice(0, maxLen);
   const lastSpace = trimmed.lastIndexOf(' ');
-  return lastSpace > 0 ? trimmed.slice(0, lastSpace) + '…' : trimmed + '…';
+  return lastSpace > 0 ? `${trimmed.slice(0, lastSpace)}…` : `${trimmed}…`;
 }
 
-async function fetchAudioMeta(audioUrl: string): Promise<{ audioContentType: AudioContentType; audioSizeBytes: number }> {
+async function fetchAudioMeta(
+  audioUrl: string,
+): Promise<{ audioContentType: AudioContentType; audioSizeBytes: number }> {
   const response = await fetch(audioUrl, { method: 'HEAD' });
 
   const contentLength = response.headers.get('content-length');
@@ -109,7 +113,7 @@ async function fetchAudioMeta(audioUrl: string): Promise<{ audioContentType: Aud
   }
 
   const sizeBytes = parseInt(contentLength, 10);
-  if (isNaN(sizeBytes)) {
+  if (Number.isNaN(sizeBytes)) {
     throw new Error(`Could not parse content-length "${contentLength}" from HEAD ${audioUrl}`);
   }
 

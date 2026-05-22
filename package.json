@@ -7,7 +7,10 @@
     "build": "tsc",
     "start": "node -r newrelic dist/index.js",
     "dev": "dotenv -- tsx watch src/index.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "biome check src",
+    "format": "biome format --write src",
+    "prepare": "simple-git-hooks"
   },
   "dependencies": {
     "cheerio": "^1",
@@ -16,13 +19,22 @@
     "newrelic": "^13.19.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
     "@types/newrelic": "^9",
     "@types/node": "^22",
     "dotenv-cli": "^8",
+    "lint-staged": "^17.0.5",
     "msw": "^2.12.10",
+    "simple-git-hooks": "^2.13.1",
     "tsx": "^4",
     "typescript": "^5",
     "vitest": "^4.0.18"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged && pnpm exec tsc --noEmit"
+  },
+  "lint-staged": {
+    "*.{ts,js,json}": "biome check --fix --no-errors-on-unmatched"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

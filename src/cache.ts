@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import type { SubmissionResult } from './furaffinity/submissionInfo.js';
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
