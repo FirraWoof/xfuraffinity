@@ -72,6 +72,8 @@ export async function handleSubmission(
         };
       case 'unauthenticated':
         return { type: 'embed', html: generateMessageEmbed('Session Expired', "FurAffinity has invalidated xfuraffinity's session, please try again later."), meta };
+      case 'accountDisabled':
+        return { type: 'embed', html: generateMessageEmbed('Account Disabled', 'Access to this account and its content has been disabled on FurAffinity'), meta };
       case 'blocked':
         return { type: 'embed', html: generateMessageEmbed('Blocked by FurAffinity', 'FurAffinity is blocking automated access'), meta };
     }

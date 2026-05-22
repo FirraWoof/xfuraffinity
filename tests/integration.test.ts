@@ -27,6 +27,7 @@ const storyNewLayoutHtml = fixture('story-new-layout.html');
 const musicNewLayoutHtml = fixture('music-new-layout.html');
 const imageEmptyDescHtml = fixture('image-empty-desc.html');
 const imageNoContentLengthHtml = fixture('image-no-content-length.html');
+const accountDisabledHtml = fixture('account-disabled.html');
 const blockedHtml = fixture('blocked.html');
 
 const DISCORD_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
@@ -50,6 +51,7 @@ const defaultHandlers = [
   http.get('https://www.furaffinity.net/view/136', () => HttpResponse.text(musicNewLayoutHtml)),
   http.get('https://www.furaffinity.net/view/137', () => HttpResponse.text(imageNoContentLengthHtml)),
   http.get('https://www.furaffinity.net/view/138', () => HttpResponse.text(imageEmptyDescHtml)),
+  http.get('https://www.furaffinity.net/view/139', () => HttpResponse.text(accountDisabledHtml)),
   http.get('https://www.furaffinity.net/view/131', () => HttpResponse.text(blockedHtml)),
   http.get('https://www.furaffinity.net/view/132', () => new HttpResponse(null, { status: 500 })),
 
@@ -315,6 +317,12 @@ describe('error states', () => {
     const response = await app.inject({ method: 'GET', url: '/view/133', headers: { 'user-agent': DISCORD_UA } });
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain('Session Expired');
+  });
+
+  it('returns Account Disabled for disabled account page', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/139', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('Account Disabled');
   });
 
   it('returns Blocked for Cloudflare-blocked page', async () => {
