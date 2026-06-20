@@ -2,6 +2,8 @@
 
 Like fxtwitter, but for furaffinity. Fix embeds on chat platforms, and display mature content by default.
 
+<img alt="Dynamic JSON Badge" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2F06g33ycs8qmy.statuspage.io%2Fapi%2Fv2%2Fstatus.json&query=status.description&label=xFurAffinity&link=https%3A%2F%2Fxfuraffinity.statuspage.io%2F">
+
 ## GIFs in Telegram
 
 Telegram seems to have a funny way of handling GIFs in embeds. It would seem that `og:video` properties need to be
