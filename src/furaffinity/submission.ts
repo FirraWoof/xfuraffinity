@@ -14,12 +14,14 @@ export type SubmissionPageResult =
   | { type: 'notFound' }
   | { type: 'unauthenticated' }
   | { type: 'accountDisabled' }
-  | { type: 'blocked' };
+  | { type: 'blocked' }
+  | { type: 'temporarilyOffline' };
 
 const SUBMISSION_NOT_FOUND_TEXT = 'not in our database';
 const UNAUTHENTICATED_TEXT = 'please log in';
 const LOGIN_REQUIRED_TITLE = 'login required';
 const ACCOUNT_DISABLED_TITLE = 'account disabled';
+const FA_OFFLINE_TITLE = 'temporarily offline';
 const CLOUDFLARE_JS_REQUIRED_TEXT = 'enable javascript and cookies to continue';
 const CLOUDFLARE_CHECKING_TEXT = 'checking your browser';
 
@@ -42,6 +44,9 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   }
   if (pageTitle.startsWith(ACCOUNT_DISABLED_TITLE)) {
     return { type: 'accountDisabled' };
+  }
+  if (pageTitle.includes(FA_OFFLINE_TITLE)) {
+    return { type: 'temporarilyOffline' };
   }
 
   const sectionBodyText = $('.section-body').text();

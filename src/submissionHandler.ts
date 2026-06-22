@@ -105,6 +105,15 @@ export async function handleSubmission(id: number, userAgent: string, config: Co
           html: generateMessageEmbed('Blocked by FurAffinity', 'FurAffinity is blocking automated access'),
           meta,
         };
+      case 'temporarilyOffline':
+        return {
+          type: 'embed',
+          html: generateMessageEmbed(
+            'FurAffinity Offline',
+            'FurAffinity is temporarily offline. Please try again later.',
+          ),
+          meta,
+        };
     }
   } catch (err) {
     noticeError(err);
