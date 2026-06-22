@@ -106,6 +106,10 @@ export function buildApp(config: Config): FastifyInstance {
     }
   }
 
+  app.get('/health', (_req, reply) => {
+    reply.send({ status: 'ok' });
+  });
+
   app.get('/view/:id', handleRoute);
   app.get('/view/:id/', handleRoute);
   app.get('/full/:id', handleRoute);

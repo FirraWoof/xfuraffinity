@@ -61,4 +61,5 @@ export type SubmissionResult =
   | { type: 'serverError'; detail: ServerErrorDetail }
   | { type: 'unauthenticated' }
   | { type: 'accountDisabled' }
-  | { type: 'blocked' };
+  | { type: 'blocked' }
+  | { type: 'temporarilyOffline' };

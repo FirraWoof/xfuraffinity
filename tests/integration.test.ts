@@ -3,8 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type FastifyInstance } from 'fastify';
-import { http, HttpResponse } from 'msw';
+import type { FastifyInstance } from 'fastify';
+import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
@@ -29,6 +29,7 @@ const imageEmptyDescHtml = fixture('image-empty-desc.html');
 const imageNoContentLengthHtml = fixture('image-no-content-length.html');
 const accountDisabledHtml = fixture('account-disabled.html');
 const blockedHtml = fixture('blocked.html');
+const offlineHtml = fixture('offline.html');
 
 const DISCORD_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
 const TELEGRAM_UA = 'TelegramBot (like TwitterBot)';
@@ -53,42 +54,51 @@ const defaultHandlers = [
   http.get('https://www.furaffinity.net/view/138', () => HttpResponse.text(imageEmptyDescHtml)),
   http.get('https://www.furaffinity.net/view/139', () => HttpResponse.text(accountDisabledHtml)),
   http.get('https://www.furaffinity.net/view/131', () => HttpResponse.text(blockedHtml)),
+  http.get('https://www.furaffinity.net/view/140', () => HttpResponse.text(offlineHtml)),
   http.get('https://www.furaffinity.net/view/132', () => new HttpResponse(null, { status: 500 })),
 
   // Asset HEAD requests for images
-  http.head('https://d.furaffinity.net/art/testartist/123/test.jpg', () =>
-    new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/123/test.jpg',
+    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
   ),
-  http.head('https://d.furaffinity.net/art/testartist/124/test.gif', () =>
-    new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/gif' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/124/test.gif',
+    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/gif' } }),
   ),
-  http.head('https://d.furaffinity.net/art/testartist/125/large.jpg', () =>
-    new HttpResponse(null, { headers: { 'content-length': '6291456', 'content-type': 'image/jpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/125/large.jpg',
+    () => new HttpResponse(null, { headers: { 'content-length': '6291456', 'content-type': 'image/jpeg' } }),
   ),
-  http.head('https://d.furaffinity.net/art/testartist/134/test.jpg', () =>
-    new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/134/test.jpg',
+    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
   ),
-  http.head('https://d.furaffinity.net/art/testartist/137/test.jpg', () =>
-    new HttpResponse(null, { headers: { 'content-type': 'image/jpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/137/test.jpg',
+    () => new HttpResponse(null, { headers: { 'content-type': 'image/jpeg' } }),
   ),
-  http.head('https://d.furaffinity.net/art/testartist/138/test.jpg', () =>
-    new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/138/test.jpg',
+    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
   ),
 
   // Story text fetch
   http.get('https://d.furaffinity.net/art/testartist/126/story.txt', () =>
-    HttpResponse.text('Once upon a time in a land far away there lived a brave adventurer.')
+    HttpResponse.text('Once upon a time in a land far away there lived a brave adventurer.'),
   ),
   http.get('https://d.furaffinity.net/art/testartist/135/story.txt', () =>
-    HttpResponse.text('A new layout story excerpt.')
+    HttpResponse.text('A new layout story excerpt.'),
   ),
 
   // Audio HEAD requests
-  http.head('https://d.furaffinity.net/art/testartist/127/song.mp3', () =>
-    new HttpResponse(null, { headers: { 'content-length': '5000000', 'content-type': 'audio/mpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/127/song.mp3',
+    () => new HttpResponse(null, { headers: { 'content-length': '5000000', 'content-type': 'audio/mpeg' } }),
   ),
-  http.head('https://d.furaffinity.net/art/testartist/136/song.mp3', () =>
-    new HttpResponse(null, { headers: { 'content-length': '5000000', 'content-type': 'audio/mpeg' } })
+  http.head(
+    'https://d.furaffinity.net/art/testartist/136/song.mp3',
+    () => new HttpResponse(null, { headers: { 'content-length': '5000000', 'content-type': 'audio/mpeg' } }),
   ),
 ];
 
@@ -120,6 +130,14 @@ afterAll(async () => {
   server.close();
   await app.close();
   await rm(cacheDir, { recursive: true });
+});
+
+describe('healthcheck', () => {
+  it('returns 200 with status ok', async () => {
+    const response = await app.inject({ method: 'GET', url: '/health' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: 'ok' });
+  });
 });
 
 describe('routing', () => {
@@ -331,6 +349,12 @@ describe('error states', () => {
     expect(response.body).toContain('Blocked by FurAffinity');
   });
 
+  it('returns FurAffinity Offline for temporarily offline page', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/140', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('FurAffinity Offline');
+  });
+
   it('returns FA Down when FA returns 500', async () => {
     const response = await app.inject({ method: 'GET', url: '/view/132', headers: { 'user-agent': DISCORD_UA } });
     expect(response.statusCode).toBe(200);
@@ -346,9 +370,10 @@ describe('cache', () => {
         fetchCount++;
         return HttpResponse.text(imageHtml.replace('view/123/', 'view/999/').replace('Test Image', 'Cached Image'));
       }),
-      http.head('https://d.furaffinity.net/art/testartist/123/test.jpg', () =>
-        new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } })
-      )
+      http.head(
+        'https://d.furaffinity.net/art/testartist/123/test.jpg',
+        () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
+      ),
     );
 
     await app.inject({ method: 'GET', url: '/view/999', headers: { 'user-agent': DISCORD_UA } });
