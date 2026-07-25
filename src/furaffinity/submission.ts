@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { stripBbcode } from './bbcode.js';
 import type { SubmissionInfo } from './submissionInfo.js';
 
 type SubmissionPageInfo = Omit<SubmissionInfo, 'sizeBytes' | 'contentType'>;
@@ -63,7 +64,7 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
 
   const url = $('meta[property*="og:url"]').attr('content');
   const title = $('meta[property*="og:title"]').attr('content');
-  const description = $('meta[property*="og:description"]').attr('content');
+  const rawDescription = $('meta[property*="og:description"]').attr('content');
   const viewCountText =
     $('.submission-page-stats div[title="Views"] div').first().text().trim() || $('div.views span').first().text(); // fallback old layout
   const commentCountText =
@@ -78,11 +79,13 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   const artistName = artistLink.text().trim();
   const artistHref = artistLink.attr('href');
 
-  if (!url || !title || description === undefined || !thumbnailSrc || !artistName || !artistHref) {
+  if (!url || !title || rawDescription === undefined || !thumbnailSrc || !artistName || !artistHref) {
     throw new Error(
-      `Failed to parse submission page: missing fields (url=${url}, title=${title}, description=${description}, thumbnail=${thumbnailSrc}, artist=${artistName})`,
+      `Failed to parse submission page: missing fields (url=${url}, title=${title}, description=${rawDescription}, thumbnail=${thumbnailSrc}, artist=${artistName})`,
     );
   }
+
+  const description = stripBbcode(rawDescription);
 
   const viewCount = parseInt(viewCountText, 10);
   const commentCount = parseInt(commentCountText, 10);

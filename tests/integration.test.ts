@@ -30,6 +30,7 @@ const imageNoContentLengthHtml = fixture('image-no-content-length.html');
 const accountDisabledHtml = fixture('account-disabled.html');
 const blockedHtml = fixture('blocked.html');
 const offlineHtml = fixture('offline.html');
+const imageBbcodeDescHtml = fixture('image-bbcode-desc.html');
 
 const DISCORD_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
 const TELEGRAM_UA = 'TelegramBot (like TwitterBot)';
@@ -55,6 +56,7 @@ const defaultHandlers = [
   http.get('https://www.furaffinity.net/view/139', () => HttpResponse.text(accountDisabledHtml)),
   http.get('https://www.furaffinity.net/view/131', () => HttpResponse.text(blockedHtml)),
   http.get('https://www.furaffinity.net/view/140', () => HttpResponse.text(offlineHtml)),
+  http.get('https://www.furaffinity.net/view/141', () => HttpResponse.text(imageBbcodeDescHtml)),
   http.get('https://www.furaffinity.net/view/132', () => new HttpResponse(null, { status: 500 })),
 
   // Asset HEAD requests for images
@@ -80,6 +82,10 @@ const defaultHandlers = [
   ),
   http.head(
     'https://d.furaffinity.net/art/testartist/138/test.jpg',
+    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
+  ),
+  http.head(
+    'https://d.furaffinity.net/art/testartist/141/test.jpg',
     () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
   ),
 
@@ -226,6 +232,16 @@ describe('image embeds', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain('Test Image Empty Desc');
     expect(response.body).toContain('og:image');
+  });
+
+  it('strips BBCode tags from the description', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/141', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    expect(body).toContain('Bold and red text');
+    expect(body).not.toContain('[b]');
+    expect(body).not.toContain('[color=red]');
+    expect(body).not.toContain('[url=');
   });
 });
 
