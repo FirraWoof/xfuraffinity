@@ -23,6 +23,9 @@ export function generateImageEmbed(info: SubmissionInfo, oEmbedUrl?: string): st
     builder.withVideo(info.imageUrl, info.contentType);
   } else {
     builder.withImage(info.imageUrl, info.contentType);
+    if (info.width && info.height) {
+      builder.withImageDimensions(info.width, info.height);
+    }
   }
 
   return builder.build();
@@ -45,6 +48,9 @@ export function generateImageTelegramEmbed(info: SubmissionInfo): string {
     builder.withVideo(mediaUrl, 'video/mp4');
   } else {
     builder.withImage(mediaUrl, info.contentType);
+    if (mediaUrl === info.imageUrl && info.width && info.height) {
+      builder.withImageDimensions(info.width, info.height);
+    }
   }
 
   return builder.build();

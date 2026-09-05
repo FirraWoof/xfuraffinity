@@ -50,6 +50,14 @@ export class OpenGraphBuilder {
     return this;
   }
 
+  withImageDimensions(width: number, height: number): this {
+    this.tags.push(`
+      <meta property="og:image:width" content="${width}" />
+      <meta property="og:image:height" content="${height}" />
+    `);
+    return this;
+  }
+
   withVideo(url: string, type: string): this {
     this.tags.push(`
       <meta property="og:video" content="${url}" />

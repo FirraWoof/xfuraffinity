@@ -12,6 +12,8 @@ export type SubmissionInfo = {
   imageUrl: string;
   contentType: ContentType;
   sizeBytes: number | null;
+  width: number | null;
+  height: number | null;
   thumbnailUrl: string;
   artistName: string;
   artistUrl: string;
