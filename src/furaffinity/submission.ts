@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { stripBbcode } from './bbcode.js';
 import type { SubmissionInfo } from './submissionInfo.js';
 
-type SubmissionPageInfo = Omit<SubmissionInfo, 'sizeBytes' | 'contentType'>;
+type SubmissionPageInfo = Omit<SubmissionInfo, 'sizeBytes' | 'contentType' | 'width' | 'height'>;
 type CommonPageInfo = Omit<SubmissionPageInfo, 'imageUrl'>;
 type StoryPageInfo = CommonPageInfo & { contentUrl: string; extension: string };
 type MusicPageInfo = CommonPageInfo & { audioUrl: string };

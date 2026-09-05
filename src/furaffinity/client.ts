@@ -1,4 +1,5 @@
 import { guessContentType } from './contentType.js';
+import { parseImageDimensions } from './imageDimensions.js';
 import { parseSubmissionPage } from './submission.js';
 import type { AudioContentType, ContentType, SubmissionResult } from './submissionInfo.js';
 
@@ -42,8 +43,8 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
   const result = parseSubmissionPage(html);
 
   if (result.type === 'image') {
-    const { sizeBytes, contentType } = await fetchImageMeta(result.info.imageUrl, cookieHeader);
-    return { type: 'image', info: { ...result.info, sizeBytes, contentType } };
+    const { sizeBytes, contentType, width, height } = await fetchImageMeta(result.info.imageUrl, cookieHeader);
+    return { type: 'image', info: { ...result.info, sizeBytes, contentType, width, height } };
   }
 
   if (result.type === 'story') {
@@ -59,21 +60,48 @@ export async function fetchSubmissionInfo(id: number, session: Session): Promise
   return result;
 }
 
+const IMAGE_HEADER_BYTES = 65536;
+
 async function fetchImageMeta(
   imageUrl: string,
   cookieHeader: string,
-): Promise<{ sizeBytes: number | null; contentType: ContentType }> {
+): Promise<{ sizeBytes: number | null; contentType: ContentType; width: number | null; height: number | null }> {
   const response = await fetch(imageUrl, {
-    method: 'HEAD',
-    headers: { ...BROWSER_HEADERS, Cookie: cookieHeader },
+    headers: { ...BROWSER_HEADERS, Cookie: cookieHeader, Range: `bytes=0-${IMAGE_HEADER_BYTES - 1}` },
   });
+
+  const contentType = parseContentType(response.headers.get('content-type'), imageUrl);
+  const sizeBytes = parseImageSize(response);
+  const header = await readPrefix(response, IMAGE_HEADER_BYTES);
+  const dimensions = parseImageDimensions(header, contentType);
+
+  return { sizeBytes, contentType, width: dimensions?.width ?? null, height: dimensions?.height ?? null };
+}
+
+function parseImageSize(response: Response): number | null {
+  const total = response.headers.get('content-range')?.split('/')[1];
+  const parsedTotal = total ? parseInt(total, 10) : NaN;
+  if (!Number.isNaN(parsedTotal)) return parsedTotal;
 
   const contentLength = response.headers.get('content-length');
   const parsed = contentLength ? parseInt(contentLength, 10) : NaN;
-  const sizeBytes = Number.isNaN(parsed) ? null : parsed;
+  return Number.isNaN(parsed) ? null : parsed;
+}
 
-  const contentType = parseContentType(response.headers.get('content-type'), imageUrl);
-  return { sizeBytes, contentType };
+async function readPrefix(response: Response, maxBytes: number): Promise<Buffer> {
+  const reader = response.body?.getReader();
+  if (!reader) return Buffer.alloc(0);
+
+  const chunks: Buffer[] = [];
+  let received = 0;
+  while (received < maxBytes) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(Buffer.from(value));
+    received += value.length;
+  }
+  await reader.cancel();
+  return Buffer.concat(chunks);
 }
 
 function parseContentType(header: string | null, imageUrl: string): ContentType {

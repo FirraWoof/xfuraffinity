@@ -36,6 +36,31 @@ const DISCORD_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp
 const TELEGRAM_UA = 'TelegramBot (like TwitterBot)';
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
+function jpegHeader(width: number, height: number): Buffer {
+  const buf = Buffer.alloc(11);
+  buf.writeUInt16BE(0xffd8, 0);
+  buf.writeUInt16BE(0xffc0, 2);
+  buf.writeUInt16BE(0x0011, 4);
+  buf.writeUInt8(0x08, 6);
+  buf.writeUInt16BE(height, 7);
+  buf.writeUInt16BE(width, 9);
+  return buf;
+}
+
+function gifHeader(width: number, height: number): Buffer {
+  const buf = Buffer.alloc(10);
+  buf.write('GIF89a', 0, 'ascii');
+  buf.writeUInt16LE(width, 6);
+  buf.writeUInt16LE(height, 8);
+  return buf;
+}
+
+function imageResponse(contentType: string, totalBytes: number | null, body: Buffer) {
+  const headers: Record<string, string> = { 'content-type': contentType };
+  if (totalBytes !== null) headers['content-range'] = `bytes 0-${body.length - 1}/${totalBytes}`;
+  return new HttpResponse(new Uint8Array(body), { status: 206, headers });
+}
+
 // Default MSW handlers covering all fixture IDs
 const defaultHandlers = [
   // FA page requests
@@ -59,34 +84,27 @@ const defaultHandlers = [
   http.get('https://www.furaffinity.net/view/141', () => HttpResponse.text(imageBbcodeDescHtml)),
   http.get('https://www.furaffinity.net/view/132', () => new HttpResponse(null, { status: 500 })),
 
-  // Asset HEAD requests for images
-  http.head(
-    'https://d.furaffinity.net/art/testartist/123/test.jpg',
-    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
+  // Asset requests for images (ranged GET for size + dimensions)
+  http.get('https://d.furaffinity.net/art/testartist/123/test.jpg', () =>
+    imageResponse('image/jpeg', 1048576, jpegHeader(1200, 800)),
   ),
-  http.head(
-    'https://d.furaffinity.net/art/testartist/124/test.gif',
-    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/gif' } }),
+  http.get('https://d.furaffinity.net/art/testartist/124/test.gif', () =>
+    imageResponse('image/gif', 1048576, gifHeader(640, 480)),
   ),
-  http.head(
-    'https://d.furaffinity.net/art/testartist/125/large.jpg',
-    () => new HttpResponse(null, { headers: { 'content-length': '6291456', 'content-type': 'image/jpeg' } }),
+  http.get('https://d.furaffinity.net/art/testartist/125/large.jpg', () =>
+    imageResponse('image/jpeg', 6291456, jpegHeader(4000, 3000)),
   ),
-  http.head(
-    'https://d.furaffinity.net/art/testartist/134/test.jpg',
-    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
+  http.get('https://d.furaffinity.net/art/testartist/134/test.jpg', () =>
+    imageResponse('image/jpeg', 1048576, jpegHeader(1200, 800)),
   ),
-  http.head(
-    'https://d.furaffinity.net/art/testartist/137/test.jpg',
-    () => new HttpResponse(null, { headers: { 'content-type': 'image/jpeg' } }),
+  http.get('https://d.furaffinity.net/art/testartist/137/test.jpg', () =>
+    imageResponse('image/jpeg', null, jpegHeader(1200, 800)),
   ),
-  http.head(
-    'https://d.furaffinity.net/art/testartist/138/test.jpg',
-    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
+  http.get('https://d.furaffinity.net/art/testartist/138/test.jpg', () =>
+    imageResponse('image/jpeg', 1048576, jpegHeader(1200, 800)),
   ),
-  http.head(
-    'https://d.furaffinity.net/art/testartist/141/test.jpg',
-    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
+  http.get('https://d.furaffinity.net/art/testartist/141/test.jpg', () =>
+    imageResponse('image/jpeg', 1048576, jpegHeader(1200, 800)),
   ),
 
   // Story text fetch
@@ -188,6 +206,8 @@ describe('image embeds', () => {
     expect(body).toContain('twitter:card');
     expect(body).toContain('summary_large_image');
     expect(body).toContain('Test Image');
+    expect(body).toContain('og:image:width" content="1200"');
+    expect(body).toContain('og:image:height" content="800"');
   });
 
   it('includes view/comment/fave stats in description', async () => {
@@ -253,6 +273,8 @@ describe('telegram image embeds', () => {
     expect(body).toContain('Test Image');
     expect(body).toContain('og:image');
     expect(body).toContain('https://d.furaffinity.net/art/testartist/123/test.jpg');
+    expect(body).toContain('og:image:width" content="1200"');
+    expect(body).toContain('og:image:height" content="800"');
     expect(body).not.toContain('application/json+oembed');
   });
 
@@ -262,6 +284,7 @@ describe('telegram image embeds', () => {
     const body = response.body;
     expect(body).toContain('t.furaffinity.net/125@400-thumb.jpg');
     expect(body).not.toContain('d.furaffinity.net/art/testartist/125/large.jpg');
+    expect(body).not.toContain('og:image:width');
   });
 
   it('falls back to thumbnail when content-length header is missing', async () => {
