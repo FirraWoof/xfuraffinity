@@ -1,4 +1,5 @@
 import type { SubmissionInfo } from '../furaffinity/submissionInfo.js';
+import { renderImageInstantViewBody } from './instantView.js';
 import { OpenGraphBuilder } from './openGraphBuilder.js';
 
 const FIVE_MB = 1024 * 1024 * 5;
@@ -52,6 +53,8 @@ export function generateImageTelegramEmbed(info: SubmissionInfo): string {
       builder.withImageDimensions(info.width, info.height);
     }
   }
+
+  builder.withBody(renderImageInstantViewBody(info));
 
   return builder.build();
 }

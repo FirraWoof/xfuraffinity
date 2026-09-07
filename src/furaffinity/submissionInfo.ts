@@ -6,6 +6,7 @@ export type SubmissionInfo = {
   url: string;
   title: string;
   description: string;
+  descriptionHtml: string;
   viewCount: number;
   commentCount: number;
   faveCount: number;
@@ -23,6 +24,7 @@ export type StoryInfo = {
   url: string;
   title: string;
   description: string;
+  descriptionHtml: string;
   viewCount: number;
   commentCount: number;
   faveCount: number;
@@ -36,6 +38,7 @@ export type MusicInfo = {
   url: string;
   title: string;
   description: string;
+  descriptionHtml: string;
   viewCount: number;
   commentCount: number;
   faveCount: number;

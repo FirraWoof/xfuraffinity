@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { stripBbcode } from './bbcode.js';
+import { cleanDescriptionHtml, plainToHtml } from './description.js';
 import type { SubmissionInfo } from './submissionInfo.js';
 
 type SubmissionPageInfo = Omit<SubmissionInfo, 'sizeBytes' | 'contentType' | 'width' | 'height'>;
@@ -86,6 +87,10 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
   }
 
   const description = stripBbcode(rawDescription);
+  const descriptionTextEl = $('.submission-description-text').first();
+  const descriptionHtml = descriptionTextEl.length
+    ? cleanDescriptionHtml(descriptionTextEl.html() ?? '')
+    : plainToHtml(description);
 
   const viewCount = parseInt(viewCountText, 10);
   const commentCount = parseInt(commentCountText, 10);
@@ -101,6 +106,7 @@ export function parseSubmissionPage(html: string): SubmissionPageResult {
     url,
     title,
     description,
+    descriptionHtml,
     viewCount,
     commentCount,
     faveCount,

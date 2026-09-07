@@ -3,7 +3,7 @@ import type { Config } from './config.js';
 import { generateImageEmbed, generateImageTelegramEmbed } from './embedGenerator/imageEmbed.js';
 import { generateMessageEmbed } from './embedGenerator/messageEmbed.js';
 import { generateMusicEmbed, generateMusicTelegramEmbed } from './embedGenerator/musicEmbed.js';
-import { generateStoryEmbed } from './embedGenerator/storyEmbed.js';
+import { generateStoryEmbed, generateStoryTelegramEmbed } from './embedGenerator/storyEmbed.js';
 import { fetchSubmissionInfo } from './furaffinity/client.js';
 import type { ServerErrorDetail } from './furaffinity/submissionInfo.js';
 import { noticeError } from './metrics.js';
@@ -50,7 +50,11 @@ export async function handleSubmission(id: number, userAgent: string, config: Co
       }
       case 'story': {
         const oEmbedUrl = config.publicUrl ? `${config.publicUrl}/oembed?id=${id}` : undefined;
-        return { type: 'embed', html: generateStoryEmbed(result.info, oEmbedUrl), meta };
+        const html =
+          requester === 'telegram'
+            ? generateStoryTelegramEmbed(result.info)
+            : generateStoryEmbed(result.info, oEmbedUrl);
+        return { type: 'embed', html, meta };
       }
       case 'music': {
         const oEmbedUrl = config.publicUrl ? `${config.publicUrl}/oembed?id=${id}` : undefined;
