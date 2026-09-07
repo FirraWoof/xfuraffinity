@@ -1,9 +1,8 @@
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+import { escapeHtml } from '../html.js';
 
 export class OpenGraphBuilder {
   private tags: string[] = [];
+  private bodyHtml: string | null = null;
 
   withDefaultMetadata(ogType: string = 'website'): this {
     this.tags.push(`
@@ -89,13 +88,20 @@ export class OpenGraphBuilder {
     return this;
   }
 
+  // Renders a real <body> for Telegram Instant View templates to extract from.
+  withBody(html: string): this {
+    this.bodyHtml = html;
+    return this;
+  }
+
   build(): string {
     const meta = this.tags.join('\n');
+    const body = this.bodyHtml ? `\n<body>\n${this.bodyHtml}\n</body>` : '';
     return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html lang="en" class="no-js" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 ${meta}
-</head>
+</head>${body}
 </html>`;
   }
 }

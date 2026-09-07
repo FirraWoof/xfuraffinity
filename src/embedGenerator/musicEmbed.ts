@@ -1,4 +1,5 @@
 import type { MusicInfo } from '../furaffinity/submissionInfo.js';
+import { renderMusicInstantViewBody } from './instantView.js';
 import { OpenGraphBuilder } from './openGraphBuilder.js';
 
 const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
@@ -27,12 +28,15 @@ export function generateMusicTelegramEmbed(info: MusicInfo): string {
   const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
   const fullDescription = info.description ? `${stats}\n\n${info.description}` : stats;
 
-  return new OpenGraphBuilder()
+  const builder = new OpenGraphBuilder()
     .withDefaultMetadata()
     .withTwitterCard('summary_large_image')
     .withTitle(info.title)
     .withDescription(fullDescription)
     .withUrl(info.url)
-    .withImage(info.thumbnailUrl, 'image/jpeg')
-    .build();
+    .withImage(info.thumbnailUrl, 'image/jpeg');
+
+  builder.withBody(renderMusicInstantViewBody(info));
+
+  return builder.build();
 }

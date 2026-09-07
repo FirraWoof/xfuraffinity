@@ -31,6 +31,7 @@ const accountDisabledHtml = fixture('account-disabled.html');
 const blockedHtml = fixture('blocked.html');
 const offlineHtml = fixture('offline.html');
 const imageBbcodeDescHtml = fixture('image-bbcode-desc.html');
+const imageRichDescHtml = fixture('image-rich-desc.html');
 
 const DISCORD_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
 const TELEGRAM_UA = 'TelegramBot (like TwitterBot)';
@@ -82,6 +83,7 @@ const defaultHandlers = [
   http.get('https://www.furaffinity.net/view/131', () => HttpResponse.text(blockedHtml)),
   http.get('https://www.furaffinity.net/view/140', () => HttpResponse.text(offlineHtml)),
   http.get('https://www.furaffinity.net/view/141', () => HttpResponse.text(imageBbcodeDescHtml)),
+  http.get('https://www.furaffinity.net/view/142', () => HttpResponse.text(imageRichDescHtml)),
   http.get('https://www.furaffinity.net/view/132', () => new HttpResponse(null, { status: 500 })),
 
   // Asset requests for images (ranged GET for size + dimensions)
@@ -105,6 +107,10 @@ const defaultHandlers = [
   ),
   http.get('https://d.furaffinity.net/art/testartist/141/test.jpg', () =>
     imageResponse('image/jpeg', 1048576, jpegHeader(1200, 800)),
+  ),
+  http.head(
+    'https://d.furaffinity.net/art/testartist/142/test.jpg',
+    () => new HttpResponse(null, { headers: { 'content-length': '1048576', 'content-type': 'image/jpeg' } }),
   ),
 
   // Story text fetch
@@ -282,16 +288,16 @@ describe('telegram image embeds', () => {
     const response = await app.inject({ method: 'GET', url: '/view/125', headers: { 'user-agent': TELEGRAM_UA } });
     expect(response.statusCode).toBe(200);
     const body = response.body;
-    expect(body).toContain('t.furaffinity.net/125@400-thumb.jpg');
-    expect(body).not.toContain('d.furaffinity.net/art/testartist/125/large.jpg');
+    expect(body).toContain('og:image" content="https://t.furaffinity.net/125@400-thumb.jpg"');
+    expect(body).not.toContain('og:image" content="https://d.furaffinity.net/art/testartist/125/large.jpg"');
     expect(body).not.toContain('og:image:width');
   });
 
   it('falls back to thumbnail when content-length header is missing', async () => {
     const response = await app.inject({ method: 'GET', url: '/view/137', headers: { 'user-agent': TELEGRAM_UA } });
     expect(response.statusCode).toBe(200);
-    expect(response.body).toContain('t.furaffinity.net/137@400-thumb.jpg');
-    expect(response.body).not.toContain('d.furaffinity.net/art/testartist/137/test.jpg');
+    expect(response.body).toContain('og:image" content="https://t.furaffinity.net/137@400-thumb.jpg"');
+    expect(response.body).not.toContain('og:image" content="https://d.furaffinity.net/art/testartist/137/test.jpg"');
   });
 
   it('uses video/mp4 for GIF on Telegram', async () => {
@@ -301,6 +307,59 @@ describe('telegram image embeds', () => {
     expect(body).toContain('og:video');
     expect(body).toContain('video/mp4');
     expect(body).not.toContain('og:image');
+  });
+});
+
+describe('telegram instant view', () => {
+  it('renders an article body with title, author and image for images', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/123', headers: { 'user-agent': TELEGRAM_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    expect(body).toContain('<body>');
+    expect(body).toContain('<article>');
+    expect(body).toContain('<h1>Test Image</h1>');
+    expect(body).toContain('rel="author"');
+    expect(body).toContain('<figure><img src="https://d.furaffinity.net/art/testartist/123/test.jpg"');
+  });
+
+  it('does not emit a body for non-telegram bots', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/123', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.body).not.toContain('<body>');
+  });
+
+  it('renders the story text as paragraphs for stories', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/126', headers: { 'user-agent': TELEGRAM_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    expect(body).toContain('<article>');
+    expect(body).toContain('<h1>Test Story</h1>');
+    expect(body).toContain('Once upon a time');
+  });
+
+  it('renders an audio element for music', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/127', headers: { 'user-agent': TELEGRAM_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    expect(body).toContain('<article>');
+    expect(body).toContain('<audio src="https://d.furaffinity.net/art/testartist/127/song.mp3"');
+  });
+
+  it('renders the full rich description (not the truncated og snippet)', async () => {
+    const response = await app.inject({ method: 'GET', url: '/view/142', headers: { 'user-agent': TELEGRAM_UA } });
+    expect(response.statusCode).toBe(200);
+    const body = response.body;
+    const article = body.slice(body.indexOf('<article>'));
+    // Full text from .submission-description-text, not the truncated og:description snippet
+    expect(article).toContain('Full description with a');
+    expect(article).toContain('Second line kept.');
+    expect(article).not.toContain('A truncated snippet');
+    // Avatar icon link becomes an @username text link; external redirect is unwrapped
+    expect(article).toContain('<a href="https://www.furaffinity.net/user/friend">@friend</a>');
+    expect(article).toContain('href="https://example.com/art"');
+    expect(article).toContain('<b>link</b>');
+    // Styling and avatar images stripped
+    expect(body).not.toContain('color:red');
+    expect(body).not.toContain('a.furaffinity.net/x/friend.gif');
   });
 });
 

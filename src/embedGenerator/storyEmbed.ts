@@ -1,4 +1,5 @@
 import type { StoryInfo } from '../furaffinity/submissionInfo.js';
+import { renderStoryInstantViewBody } from './instantView.js';
 import { OpenGraphBuilder } from './openGraphBuilder.js';
 
 const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
@@ -20,6 +21,24 @@ export function generateStoryEmbed(info: StoryInfo, oEmbedUrl?: string): string 
   if (oEmbedUrl) {
     builder.withOEmbed(oEmbedUrl);
   }
+
+  return builder.build();
+}
+
+export function generateStoryTelegramEmbed(info: StoryInfo): string {
+  const stats = `👁 ${fmt(info.viewCount)}  💬 ${fmt(info.commentCount)}  ⭐ ${fmt(info.faveCount)}`;
+  const contentSection = info.excerpt ?? (info.description || null);
+  const fullDescription = contentSection ? `${stats}\n\n${contentSection}` : stats;
+
+  const builder = new OpenGraphBuilder()
+    .withDefaultMetadata()
+    .withTwitterCard('summary_large_image')
+    .withTitle(info.title)
+    .withDescription(fullDescription)
+    .withUrl(info.url)
+    .withImage(info.thumbnailUrl, 'image/jpeg');
+
+  builder.withBody(renderStoryInstantViewBody(info));
 
   return builder.build();
 }
