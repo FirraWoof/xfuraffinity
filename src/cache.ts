@@ -1,5 +1,7 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import type { SubmissionResult } from './furaffinity/submissionInfo.js';
+import { noticeError } from './metrics.js';
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
@@ -25,8 +27,15 @@ export async function getCached(cacheDir: string, id: number): Promise<Submissio
 export async function setCached(cacheDir: string, id: number, result: SubmissionResult): Promise<void> {
   if (!CACHEABLE_TYPES.has(result.type)) return;
   const entry: CacheEntry = { cachedAt: Date.now(), result };
-  const tmpPath = `${cacheDir}/${id}.json.tmp`;
+  // Unique tmp path per write: concurrent requests for the same id (e.g. Discord fetching
+  // /view and /oembed together) would otherwise clobber each other's tmp file.
+  const tmpPath = `${cacheDir}/${id}.json.${randomUUID()}.tmp`;
   const finalPath = `${cacheDir}/${id}.json`;
-  await writeFile(tmpPath, JSON.stringify(entry));
-  await rename(tmpPath, finalPath);
+  try {
+    await writeFile(tmpPath, JSON.stringify(entry));
+    await rename(tmpPath, finalPath);
+  } catch (err) {
+    noticeError(err);
+    await rm(tmpPath, { force: true }).catch(() => {});
+  }
 }
