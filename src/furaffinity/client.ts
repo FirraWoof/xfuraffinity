@@ -1,4 +1,4 @@
-import { guessContentType } from './contentType.js';
+import { guessContentType, sniffContentType } from './contentType.js';
 import { parseImageDimensions } from './imageDimensions.js';
 import { parseSubmissionPage } from './submission.js';
 import type { AudioContentType, ContentType, SubmissionResult } from './submissionInfo.js';
@@ -70,9 +70,9 @@ async function fetchImageMeta(
     headers: { ...BROWSER_HEADERS, Cookie: cookieHeader, Range: `bytes=0-${IMAGE_HEADER_BYTES - 1}` },
   });
 
-  const contentType = parseContentType(response.headers.get('content-type'), imageUrl);
   const sizeBytes = parseImageSize(response);
   const header = await readPrefix(response, IMAGE_HEADER_BYTES);
+  const contentType = parseContentType(header, response, imageUrl);
   const dimensions = parseImageDimensions(header, contentType);
 
   return { sizeBytes, contentType, width: dimensions?.width ?? null, height: dimensions?.height ?? null };
@@ -104,13 +104,24 @@ async function readPrefix(response: Response, maxBytes: number): Promise<Buffer>
   return Buffer.concat(chunks);
 }
 
-function parseContentType(header: string | null, imageUrl: string): ContentType {
+// Prefer the file's magic bytes; fall back to the header and extension so we can still
+// produce a best-effort embed if the image fetch returned something unexpected.
+function parseContentType(bytes: Buffer, response: Response, imageUrl: string): ContentType {
+  const sniffed = sniffContentType(bytes);
+  if (sniffed) return sniffed;
+
+  const header = response.headers.get('content-type');
   const mimeType = header?.split(';')[0].trim();
   if (mimeType === 'image/jpeg' || mimeType === 'image/png' || mimeType === 'image/gif' || mimeType === 'video/mp4') {
     return mimeType;
   }
+
   const fallback = guessContentType(imageUrl);
-  if (fallback.isErr()) throw new Error(`Could not determine content type for ${imageUrl}: ${fallback.error}`);
+  if (fallback.isErr()) {
+    throw new Error(
+      `Could not determine content type for ${imageUrl} (status=${response.status}, content-type=${header}): ${fallback.error}`,
+    );
+  }
   return fallback.value;
 }
 

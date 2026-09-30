@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,6 +54,20 @@ function gifHeader(width: number, height: number): Buffer {
   buf.writeUInt16LE(width, 6);
   buf.writeUInt16LE(height, 8);
   return buf;
+}
+
+function pngHeader(width: number, height: number): Buffer {
+  const buf = Buffer.alloc(24);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(buf, 0);
+  buf.writeUInt32BE(13, 8);
+  buf.write('IHDR', 12, 'ascii');
+  buf.writeUInt32BE(width, 16);
+  buf.writeUInt32BE(height, 20);
+  return buf;
+}
+
+function imagePageWithDownload(downloadPath: string): string {
+  return imageHtml.replace('//d.furaffinity.net/art/testartist/123/test.jpg', `//d.furaffinity.net${downloadPath}`);
 }
 
 function imageResponse(contentType: string, totalBytes: number | null, body: Buffer) {
@@ -268,6 +282,64 @@ describe('image embeds', () => {
     expect(body).not.toContain('[b]');
     expect(body).not.toContain('[color=red]');
     expect(body).not.toContain('[url=');
+  });
+});
+
+describe('image content type detection', () => {
+  it('detects content type from bytes when the URL has no extension and the header is generic', async () => {
+    server.use(
+      http.get('https://www.furaffinity.net/view/143', () =>
+        HttpResponse.text(imagePageWithDownload('/art/testartist/143/143.')),
+      ),
+      http.get('https://d.furaffinity.net/art/testartist/143/143.', () =>
+        imageResponse('application/octet-stream', 400120, pngHeader(900, 700)),
+      ),
+    );
+    const response = await app.inject({ method: 'GET', url: '/view/143', headers: { 'user-agent': TELEGRAM_UA } });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('og:image');
+    expect(response.body).toContain('og:image:width" content="900"');
+    expect(response.body).not.toContain('xfuraffinity Error');
+  });
+
+  it('falls back to the header when the bytes are unrecognized', async () => {
+    server.use(
+      http.get('https://www.furaffinity.net/view/144', () =>
+        HttpResponse.text(imagePageWithDownload('/art/testartist/144/144.')),
+      ),
+      http.get('https://d.furaffinity.net/art/testartist/144/144.', () =>
+        imageResponse('image/png', 1024, Buffer.from('not an image')),
+      ),
+    );
+    const response = await app.inject({ method: 'GET', url: '/view/144', headers: { 'user-agent': DISCORD_UA } });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('og:image');
+    expect(response.body).not.toContain('xfuraffinity Error');
+  });
+});
+
+describe('cache', () => {
+  it('handles concurrent cache misses for the same submission', async () => {
+    server.use(
+      http.get('https://www.furaffinity.net/view/145', () =>
+        HttpResponse.text(imagePageWithDownload('/art/testartist/145/test.jpg')),
+      ),
+      http.get('https://d.furaffinity.net/art/testartist/145/test.jpg', () =>
+        imageResponse('image/jpeg', 1048576, jpegHeader(1200, 800)),
+      ),
+    );
+    const responses = await Promise.all([
+      app.inject({ method: 'GET', url: '/view/145', headers: { 'user-agent': DISCORD_UA } }),
+      app.inject({ method: 'GET', url: '/oembed?id=145' }),
+      app.inject({ method: 'GET', url: '/view/145/', headers: { 'user-agent': DISCORD_UA } }),
+    ]);
+    for (const response of responses) {
+      expect(response.statusCode).toBe(200);
+      expect(response.body).not.toContain('xfuraffinity Error');
+    }
+    const files = await readdir(cacheDir);
+    expect(files).toContain('145.json');
+    expect(files.filter((f) => f.endsWith('.tmp'))).toEqual([]);
   });
 });
 
