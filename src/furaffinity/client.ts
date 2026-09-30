@@ -104,8 +104,6 @@ async function readPrefix(response: Response, maxBytes: number): Promise<Buffer>
   return Buffer.concat(chunks);
 }
 
-// Prefer the file's magic bytes; fall back to the header and extension so we can still
-// produce a best-effort embed if the image fetch returned something unexpected.
 function parseContentType(bytes: Buffer, response: Response, imageUrl: string): ContentType {
   const sniffed = sniffContentType(bytes);
   if (sniffed) return sniffed;

@@ -35,7 +35,6 @@ export async function setCached(cacheDir: string, id: number, result: Submission
     await writeFile(tmpPath, JSON.stringify(entry));
     await rename(tmpPath, finalPath);
   } catch (err) {
-    // Caching is best-effort; don't fail the request over it
     noticeError(err);
     await rm(tmpPath, { force: true }).catch(() => {});
   }
